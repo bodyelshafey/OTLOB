@@ -1,0 +1,117 @@
+{
+  "common": {
+    "appName": "أطلب",
+    "loading": "جاري التحميل...",
+    "retry": "إعادة المحاولة",
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "confirm": "تأكيد",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "add": "إضافة",
+    "search": "بحث",
+    "offline": "لا يوجد اتصال بالإنترنت",
+    "error": "حدث خطأ ما",
+    "seeAll": "عرض الكل",
+    "back": "رجوع",
+    "next": "التالي",
+    "done": "تم"
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "fullName": "الاسم الكامل",
+    "email": "البريد الإلكتروني",
+    "phone": "رقم الهاتف",
+    "password": "كلمة المرور",
+    "noAccount": "ليس لديك حساب؟",
+    "haveAccount": "لديك حساب بالفعل؟",
+    "welcome": "مرحبًا بك في أطلب",
+    "welcomeSubtitle": "كل ما تحتاجه من العاصمة الإدارية الجديدة، في مكان واحد",
+    "logout": "تسجيل الخروج"
+  },
+  "home": {
+    "searchPlaceholder": "ابحث عن متجر أو منتج...",
+    "storeTypes": "الأقسام",
+    "todaysOffers": "عروض اليوم",
+    "nearbyStores": "متاجر بالقرب منك"
+  },
+  "store": {
+    "deliveryTime": "وقت التوصيل",
+    "deliveryFee": "رسوم التوصيل",
+    "freeDelivery": "توصيل مجاني",
+    "closed": "مغلق الآن",
+    "open": "مفتوح",
+    "addToCart": "أضف للسلة",
+    "unavailable": "غير متوفر",
+    "allCategories": "الكل",
+    "noProducts": "لا توجد منتجات في هذا القسم"
+  },
+  "cart": {
+    "title": "السلة",
+    "empty": "سلتك فارغة",
+    "subtotal": "الإجمالي الفرعي",
+    "checkout": "إتمام الطلب",
+    "clearConfirmTitle": "بدء سلة جديدة؟",
+    "clearConfirmBody": "سلتك تحتوي على منتجات من متجر آخر. هل تريد إفراغها وإضافة هذا المنتج؟"
+  },
+  "checkout": {
+    "title": "إتمام الطلب",
+    "name": "الاسم",
+    "phone": "رقم الهاتف",
+    "address": "العنوان",
+    "chooseAddress": "اختر عنوانًا محفوظًا",
+    "addAddress": "إضافة عنوان جديد",
+    "paymentMethod": "طريقة الدفع",
+    "cash": "الدفع عند الاستلام",
+    "card": "بطاقة ائتمان",
+    "placeOrder": "تأكيد الطلب"
+  },
+  "order": {
+    "status": {
+      "PENDING": "بانتظار التأكيد",
+      "ACCEPTED": "تم القبول",
+      "PREPARING": "جاري التحضير",
+      "READY": "جاهز للتوصيل",
+      "DELIVERING": "في الطريق إليك",
+      "COMPLETED": "تم التوصيل",
+      "CANCELLED": "ملغي"
+    },
+    "history": "طلباتي",
+    "trackOrder": "تتبع الطلب",
+    "orderNumber": "طلب رقم",
+    "noOrders": "لا توجد طلبات بعد"
+  },
+  "addresses": {
+    "title": "العناوين",
+    "district": "الحي",
+    "zone": "المنطقة",
+    "details": "تفاصيل إضافية",
+    "noAddresses": "لا توجد عناوين محفوظة"
+  },
+  "favorites": {
+    "title": "المفضلة",
+    "stores": "المتاجر",
+    "products": "المنتجات",
+    "empty": "لا يوجد شيء في المفضلة بعد"
+  },
+  "profile": {
+    "title": "حسابي",
+    "editProfile": "تعديل البيانات",
+    "myOrders": "طلباتي",
+    "myAddresses": "عناويني",
+    "myFavorites": "المفضلة",
+    "notifications": "الإشعارات",
+    "language": "اللغة",
+    "storeDashboard": "لوحة تحكم المتجر",
+    "driverDashboard": "لوحة تحكم السائق",
+    "adminDashboard": "لوحة تحكم الإدارة"
+  },
+  "tabs": {
+    "home": "الرئيسية",
+    "stores": "المتاجر",
+    "orders": "طلباتي",
+    "favorites": "المفضلة",
+    "profile": "حسابي"
+  }
+}

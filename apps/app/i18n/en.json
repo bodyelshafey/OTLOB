@@ -1,0 +1,117 @@
+{
+  "common": {
+    "appName": "Otlob",
+    "loading": "Loading...",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "save": "Save",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "offline": "No internet connection",
+    "error": "Something went wrong",
+    "seeAll": "See all",
+    "back": "Back",
+    "next": "Next",
+    "done": "Done"
+  },
+  "auth": {
+    "login": "Log in",
+    "register": "Create account",
+    "fullName": "Full name",
+    "email": "Email",
+    "phone": "Phone number",
+    "password": "Password",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "welcome": "Welcome to Otlob",
+    "welcomeSubtitle": "Everything you need from the New Capital, in one place",
+    "logout": "Log out"
+  },
+  "home": {
+    "searchPlaceholder": "Search for a store or product...",
+    "storeTypes": "Categories",
+    "todaysOffers": "Today's offers",
+    "nearbyStores": "Stores near you"
+  },
+  "store": {
+    "deliveryTime": "Delivery time",
+    "deliveryFee": "Delivery fee",
+    "freeDelivery": "Free delivery",
+    "closed": "Closed now",
+    "open": "Open",
+    "addToCart": "Add to cart",
+    "unavailable": "Unavailable",
+    "allCategories": "All",
+    "noProducts": "No products in this category"
+  },
+  "cart": {
+    "title": "Cart",
+    "empty": "Your cart is empty",
+    "subtotal": "Subtotal",
+    "checkout": "Checkout",
+    "clearConfirmTitle": "Start a new cart?",
+    "clearConfirmBody": "Your cart has items from another store. Clear it and add this item instead?"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "name": "Name",
+    "phone": "Phone number",
+    "address": "Address",
+    "chooseAddress": "Choose a saved address",
+    "addAddress": "Add a new address",
+    "paymentMethod": "Payment method",
+    "cash": "Cash on delivery",
+    "card": "Card",
+    "placeOrder": "Place order"
+  },
+  "order": {
+    "status": {
+      "PENDING": "Awaiting confirmation",
+      "ACCEPTED": "Accepted",
+      "PREPARING": "Preparing",
+      "READY": "Ready for delivery",
+      "DELIVERING": "On the way",
+      "COMPLETED": "Delivered",
+      "CANCELLED": "Cancelled"
+    },
+    "history": "My orders",
+    "trackOrder": "Track order",
+    "orderNumber": "Order",
+    "noOrders": "No orders yet"
+  },
+  "addresses": {
+    "title": "Addresses",
+    "district": "District",
+    "zone": "Zone",
+    "details": "Additional details",
+    "noAddresses": "No saved addresses"
+  },
+  "favorites": {
+    "title": "Favorites",
+    "stores": "Stores",
+    "products": "Products",
+    "empty": "Nothing in favorites yet"
+  },
+  "profile": {
+    "title": "My account",
+    "editProfile": "Edit profile",
+    "myOrders": "My orders",
+    "myAddresses": "My addresses",
+    "myFavorites": "My favorites",
+    "notifications": "Notifications",
+    "language": "Language",
+    "storeDashboard": "Store dashboard",
+    "driverDashboard": "Driver dashboard",
+    "adminDashboard": "Admin dashboard"
+  },
+  "tabs": {
+    "home": "Home",
+    "stores": "Stores",
+    "orders": "Orders",
+    "favorites": "Favorites",
+    "profile": "Profile"
+  }
+}

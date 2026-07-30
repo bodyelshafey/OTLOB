@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #12bfe5;
+  --color-primary-dark: #0b84a0;
+  --color-bg: #eefcff;
+  --color-bg-alt: #dff7ff;
+  --color-accent: #ff8a3d;
+  --color-ink: #0b2530;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-ink);
+}
+
+/* Respect reduced-motion preferences across the app */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgba(18, 191, 229, 0.35);
+  border-radius: 999px;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@font-face {
+  font-family: 'Cyberjunkies';
+  src: url("C:\\Users\\yasse\\OneDrive\\سطح المكتب\\otlob\\apps\\web\\fonts\\Cyberjunkies.ttf") format('truetype');
+}

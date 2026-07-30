@@ -1,0 +1,30 @@
+version: "3.9"
+services:
+  # Postgres is NOT run here — the app connects directly to Supabase's
+  # managed Postgres via DATABASE_URL in .env. Redis is still local/self-hosted
+  # for BullMQ queues (or point REDIS_URL at a managed Redis instance too).
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: ./apps/api
+    restart: unless-stopped
+    env_file: apps/api/.env
+    depends_on:
+      - redis
+    ports:
+      - "4000:4000"
+
+  web:
+    build:
+      context: ./apps/web
+    restart: unless-stopped
+    env_file: apps/web/.env.local
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
