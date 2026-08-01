@@ -8,7 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useFonts } from "expo-font";
-
+import { Header } from "@/components/Header";
 import {
   Cairo_600SemiBold,
   Cairo_700Bold,
@@ -101,6 +101,8 @@ if (!fontsLoaded || !rtlReady) {
  * Redirects unauthenticated users to the auth stack and authenticated
  * users away from it, mirroring the web app's route-guarding logic.
  */
+// app/_layout.tsx — داخل AuthGate (الكومبوننت اللي يتحكم بالتوجيه حسب حالة الدخول)
+
 function AuthGate() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const segments = useSegments();
@@ -117,8 +119,11 @@ function AuthGate() {
     }
   }, [accessToken, segments, router]);
 
+  const inAuthGroup = segments[0] === "(auth)";
+
   return (
     <View style={{ flex: 1 }}>
+      {!inAuthGroup && <Header />}
       <OfflineBanner visible={!online} />
       <Slot />
     </View>

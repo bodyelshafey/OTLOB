@@ -1,0 +1,7 @@
+أضف هذا المفتاح داخل كائن "common" الموجود بالفعل في كل من الملفين (لا تستبدل الملف كاملاً، فقط أضف السطر):
+
+apps/app/i18n/ar.json  →  داخل "common": { ... }
+  "location": "العاصمة الإدارية",
+
+apps/app/i18n/en.json  →  داخل "common": { ... }
+  "location": "New Capital"
