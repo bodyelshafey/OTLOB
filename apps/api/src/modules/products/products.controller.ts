@@ -4,6 +4,7 @@ import { UserRole } from '@prisma/client';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { Public } from '../../common/decorators/public.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 
@@ -33,21 +34,26 @@ export class ProductsController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.STORE_OWNER, UserRole.EMPLOYEE, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @Post()
-  create(@Body() dto: CreateProductDto) {
-    return this.service.create(dto);
+  create(@CurrentUser('id') userId: string, @CurrentUser('role') role: string, @Body() dto: CreateProductDto) {
+    return this.service.create(userId, role, dto);
   }
 
   @UseGuards(RolesGuard)
   @Roles(UserRole.STORE_OWNER, UserRole.EMPLOYEE, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: Partial<CreateProductDto>) {
-    return this.service.update(id, dto);
+  update(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') role: string,
+    @Body() dto: Partial<CreateProductDto>,
+  ) {
+    return this.service.update(id, userId, role, dto);
   }
 
   @UseGuards(RolesGuard)
   @Roles(UserRole.STORE_OWNER, UserRole.EMPLOYEE, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  remove(@Param('id') id: string, @CurrentUser('id') userId: string, @CurrentUser('role') role: string) {
+    return this.service.remove(id, userId, role);
   }
 }

@@ -11,6 +11,7 @@ export interface User {
   phone?: string | null;
   avatar?: string | null;
   role: "USER" | "STORE_OWNER" | "EMPLOYEE" | "DRIVER" | "ADMIN" | "SUPER_ADMIN";
+  isVerified?: boolean;
 }
 
 export interface StoreType {
@@ -73,9 +74,11 @@ export interface Order {
   paymentStatus: string;
   subtotal: number;
   deliveryFee: number;
+  commission?: number;
   total: number;
   createdAt: string;
   store?: Store;
+  user?: { fullName?: string; phone?: string } | null;
   items?: Array<{
     id: string;
     productName: string;
@@ -102,10 +105,68 @@ export interface Offer {
   id: string;
   titleAr: string;
   titleEn?: string;
+  descriptionAr?: string | null;
+  descriptionEn?: string | null;
+  image?: string | null;
   oldPrice?: number | null;
   newPrice?: number | null;
   discountPercentage?: number | null;
+  isActive?: boolean;
   storeId?: string;
+  // Set by the store owner to request homepage "Today's Offers" placement.
+  // Doesn't guarantee placement by itself — see approvalStatus.
+  isFeaturedHome?: boolean;
+  displayOrder?: number;
+  // Only meaningful when isFeaturedHome is true. Server-controlled — never
+  // send this on create/update, it's ignored if you do.
+  approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  rejectionReason?: string | null;
+  reviewedAt?: string | null;
+  // Fully optional "detailed offer" info.
+  includedItems?: string | null;
+  conditions?: string | null;
+  quantityLimit?: number | null;
+  // Present on GET /offers and GET /offers/:id — omitted on write payloads.
+  store?: {
+    id: string;
+    name: string;
+    image?: string | null;
+    deliveryTime?: string | null;
+    rating?: number;
+    isOpen?: boolean;
+  } | null;
+}
+
+export interface Ad {
+  id: string;
+  title?: string | null;
+  image?: string | null;
+  link?: string | null;
+  isActive?: boolean;
+  sortOrder?: number;
+  storeId?: string | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  // Server-controlled — never send this on create/update, it's ignored.
+  approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  rejectionReason?: string | null;
+  reviewedAt?: string | null;
+  store?: { id: string; name: string; image?: string | null } | null;
+}
+
+export interface Banner {
+  id: string;
+  title?: string | null;
+  image: string;
+  link?: string | null;
+  isActive?: boolean;
+  sortOrder?: number;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  // Optional — the store this banner is promoting, set from the admin
+  // dashboard. Present on GET responses only; send storeId (not this) on writes.
+  storeId?: string | null;
+  store?: { id: string; name: string } | null;
 }
 
 export interface Favorite {
@@ -116,8 +177,12 @@ export interface Favorite {
 
 export interface AppNotification {
   id: string;
-  title: string;
-  body: string;
+  type: string;
+  titleAr?: string | null;
+  titleEn?: string | null;
+  bodyAr?: string | null;
+  bodyEn?: string | null;
+  data?: Record<string, unknown> | null;
   isRead: boolean;
   createdAt: string;
 }

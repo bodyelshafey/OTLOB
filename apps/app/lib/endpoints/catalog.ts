@@ -35,6 +35,10 @@ export function toggleStoreOpen(id: string) {
   return api.patch<Store>(`/stores/${id}/toggle-open`).then((r) => r.data);
 }
 
+export function suspendStore(id: string) {
+  return api.delete(`/stores/${id}`);
+}
+
 export function getCategories(storeId?: string, storeTypeId?: string) {
   return api
     .get<Category[]>("/categories", { params: { storeId, storeTypeId } })

@@ -118,7 +118,7 @@ export default function OrderTracking() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.bg, paddingTop: -40 },
   map: { width: "100%", height: 220 },
   body: { padding: spacing(5), gap: 16 },
   timeline: { gap: 12, marginTop: 8 },

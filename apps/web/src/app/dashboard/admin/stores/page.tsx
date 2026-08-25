@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Search, Star } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Search, Star, Power, Ban } from 'lucide-react';
 import { api } from '@/lib/api';
 import { RoleGate } from '@/components/dashboard/RoleGate';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
@@ -11,10 +11,23 @@ import type { Store } from '@/types';
 
 function AdminStores() {
   const [search, setSearch] = useState('');
+  const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery<{ items: Store[] }>({
     queryKey: ['admin-stores', search],
     queryFn: () => api.get('/stores', { params: { search: search || undefined, limit: 100 } }).then((r) => r.data),
+  });
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['admin-stores'] });
+
+  const toggleOpen = useMutation({
+    mutationFn: (id: string) => api.patch(`/stores/${id}/toggle-open`),
+    onSuccess: invalidate,
+  });
+
+  const suspendStore = useMutation({
+    mutationFn: (id: string) => api.delete(`/stores/${id}`),
+    onSuccess: invalidate,
   });
 
   return (
@@ -35,21 +48,41 @@ function AdminStores() {
 
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
         {(data?.items ?? []).map((store) => (
-          <div key={store.id} className="flex items-center justify-between rounded-xl2 bg-white p-4 shadow-soft">
-            <div>
-              <h4 className="font-bold text-ink">{store.name}</h4>
+          <div key={store.id} className="flex items-center justify-between gap-2 rounded-xl2 bg-white p-4 shadow-soft">
+            <div className="min-w-0">
+              <h4 className="truncate font-bold text-ink">{store.name}</h4>
               <p className="flex items-center gap-1 text-xs text-ink/50">
                 <Star size={12} className="fill-accent text-accent" />
                 {Number(store.rating).toFixed(1)} · {store.storeType?.nameAr}
               </p>
+              <span
+                className={`mt-1 inline-block rounded-full px-3 py-1 text-[11px] font-bold ${
+                  store.isOpen ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'
+                }`}
+              >
+                {store.isOpen ? 'مفتوح' : 'مغلق'}
+              </span>
             </div>
-            <span
-              className={`rounded-full px-3 py-1 text-[11px] font-bold ${
-                store.isOpen ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'
-              }`}
-            >
-              {store.isOpen ? 'مفتوح' : 'مغلق'}
-            </span>
+            <div className="flex shrink-0 flex-col items-center gap-1.5">
+              <button
+                onClick={() => toggleOpen.mutate(store.id)}
+                title={store.isOpen ? 'إغلاق المتجر' : 'فتح المتجر'}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-50 text-primary-700"
+              >
+                <Power size={14} />
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm(`تعليق متجر "${store.name}"؟ لن يظهر للعملاء بعد ذلك.`)) {
+                    suspendStore.mutate(store.id);
+                  }
+                }}
+                title="تعليق المتجر"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-500"
+              >
+                <Ban size={14} />
+              </button>
+            </div>
           </div>
         ))}
         {!isLoading && data?.items?.length === 0 && (

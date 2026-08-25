@@ -47,7 +47,7 @@ export default function OrdersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.bg, paddingTop: -40 },
   title: {
     fontFamily: fonts.headingBold,
     fontSize: 20,

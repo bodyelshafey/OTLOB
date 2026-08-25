@@ -2,7 +2,9 @@ import { Body, Controller, Get, Param, Patch, Query, UseGuards } from '@nestjs/c
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ChangeRoleDto } from './dto/change-role.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { ClientIp } from '../../common/decorators/client-ip.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole } from '@prisma/client';
@@ -35,5 +37,25 @@ export class UsersController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usersService.findById(id);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Patch(':id/toggle-active')
+  toggleActive(@Param('id') id: string, @CurrentUser('id') actingUserId: string, @ClientIp() ip?: string) {
+    return this.usersService.toggleActive(id, actingUserId, ip);
+  }
+
+  // Role changes are more sensitive than active/inactive — SUPER_ADMIN only.
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @Patch(':id/role')
+  changeRole(
+    @Param('id') id: string,
+    @Body() dto: ChangeRoleDto,
+    @CurrentUser('id') actingUserId: string,
+    @ClientIp() ip?: string,
+  ) {
+    return this.usersService.changeRole(id, dto.role, actingUserId, ip);
   }
 }

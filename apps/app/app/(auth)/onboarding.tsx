@@ -34,7 +34,7 @@ export default function Onboarding() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.primary50, justifyContent: "space-between" },
+  container: { flex: 1, backgroundColor: colors.primary50, justifyContent: "space-between", paddingTop: -40 },
   hero: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing(6) },
   logo: { width: 96, height: 96, marginBottom: 24, borderRadius: 20 },
   title: { fontFamily: fonts.headingExtrabold, fontSize: 26, color: colors.ink, textAlign: "center" },

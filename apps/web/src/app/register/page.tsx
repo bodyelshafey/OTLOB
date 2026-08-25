@@ -5,11 +5,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { useAuthStore } from '@/store/auth-store';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const setAuth = useAuthStore((s) => s.setAuth);
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -21,8 +19,9 @@ export default function RegisterPage() {
     mutationFn: () =>
       api.post('/auth/register', { fullName, email, phone, password }).then((r) => r.data),
     onSuccess: (data) => {
-      setAuth(data.user, data.accessToken, data.refreshToken);
-      router.push('/');
+      // Account is created but unverified — complete the flow on the code
+      // page instead of logging straight in.
+      router.push(`/verify?email=${encodeURIComponent(data.email)}`);
     },
     onError: (err: any) => {
       setError(err?.response?.data?.message ?? 'تعذر إنشاء الحساب، تأكد من البيانات');

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { DriverStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
@@ -50,10 +50,21 @@ export class DriversService {
   async acceptOrder(userId: string, orderId: string) {
     const driver = await this.prisma.driver.findUnique({ where: { userId } });
     if (!driver) throw new NotFoundException('Driver profile not found');
-    return this.prisma.order.update({
-      where: { id: orderId },
+
+    // Conditional update, not a blind write: the where clause only matches
+    // if the order is still READY and unassigned, so two drivers accepting
+    // the same order concurrently can't both "win" — whichever request
+    // lands first claims it atomically, and the second gets updateMany's
+    // count: 0 and a clear error instead of silently overwriting the first
+    // driver's assignment.
+    const result = await this.prisma.order.updateMany({
+      where: { id: orderId, orderStatus: 'READY', driverId: null },
       data: { driverId: driver.id, orderStatus: 'DELIVERING' },
     });
+    if (result.count === 0) {
+      throw new ConflictException('This order is no longer available for pickup');
+    }
+    return this.prisma.order.findUnique({ where: { id: orderId } });
   }
 
   myDeliveries(userId: string) {

@@ -75,7 +75,7 @@ export default function EditProfile() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.bg, paddingTop: -40 },
   avatarWrap: { alignSelf: "center", marginBottom: 24 },
   avatar: { width: 96, height: 96, borderRadius: 48, backgroundColor: colors.primary100 },
   avatarEditBadge: {

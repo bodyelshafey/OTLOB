@@ -24,6 +24,13 @@ export default function LoginPage() {
       router.push(redirect);
     },
     onError: (err: any) => {
+      if (err?.response?.data?.code === 'EMAIL_NOT_VERIFIED') {
+        // Get them a fresh code immediately instead of making them click
+        // "resend" on a page they didn't ask to see.
+        api.post('/auth/resend-verification', { email }).catch(() => {});
+        router.push(`/verify?email=${encodeURIComponent(email)}&redirect=${encodeURIComponent(redirect)}`);
+        return;
+      }
       setError(err?.response?.data?.message ?? 'خطأ في البريد الإلكتروني أو كلمة المرور');
     },
   });

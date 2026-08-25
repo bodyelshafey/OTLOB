@@ -60,7 +60,7 @@ export function StatusBadge({ status }: { status: OrderStatus }) {
 }
 
 const styles = StyleSheet.create({
-  centered: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24, gap: 8 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24, gap: 8, margin: 24 },
   emptyText: { fontFamily: fonts.body, fontSize: 14, color: colors.inkMuted, textAlign: "center" },
   offlineBanner: {
     backgroundColor: colors.ink,

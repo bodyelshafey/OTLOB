@@ -31,7 +31,27 @@ export default function Login() {
       setAuth(data.user, data.accessToken, data.refreshToken);
       router.replace("/(tabs)");
     },
-    onError: () => setError(t("common.error")),
+    onError: (err: any) => {
+  console.log("========== LOGIN ERROR ==========");
+  console.log("MESSAGE:", err?.message);
+  console.log("STATUS:", err?.response?.status);
+  console.log("DATA:", err?.response?.data);
+  console.log("URL:", err?.config?.url);
+  console.log("BASE URL:", err?.config?.baseURL);
+  console.log("=================================");
+
+  if (err?.response?.data?.code === "EMAIL_NOT_VERIFIED") {
+    authApi.resendVerification(email).catch(() => {});
+    router.push({ pathname: "/(auth)/verify", params: { email } });
+    return;
+  }
+
+  setError(
+    err?.response?.data?.message ||
+    err?.message ||
+    "حدث خطأ"
+  );
+},
   });
 
   return (
@@ -82,7 +102,7 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.white },
+  container: { flex: 1, backgroundColor: colors.white, paddingTop: -40 },
   content: { padding: spacing(6), flexGrow: 1, justifyContent: "center" },
   title: {
     fontFamily: fonts.headingExtrabold,

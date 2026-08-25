@@ -4,7 +4,7 @@ import { useAuthStore } from "@/store/authStore";
 
 const API_BASE_URL =
   (Constants.expoConfig?.extra as { apiBaseUrl?: string } | undefined)
-    ?.apiBaseUrl ?? "https://otlob-production.up.railway.app/api";
+    ?.apiBaseUrl ?? "http://192.168.43.183:4000/api";
 
 export const api = axios.create({
   baseURL: API_BASE_URL,

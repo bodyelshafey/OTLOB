@@ -15,8 +15,8 @@ export class EmployeesController {
   constructor(private service: EmployeesService) {}
 
   @Get()
-  list(@Param('storeId') storeId: string) {
-    return this.service.listMembers(storeId);
+  list(@Param('storeId') storeId: string, @CurrentUser('id') requesterId: string, @CurrentUser('role') role: string) {
+    return this.service.listMembers(storeId, requesterId, role);
   }
 
   @Post()

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { HealthController } from './health.controller';
 import { PrismaModule } from './prisma/prisma.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -16,6 +17,9 @@ import { AddressesModule } from './modules/addresses/addresses.module';
 import { FavoritesModule } from './modules/favorites/favorites.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { OffersModule } from './modules/offers/offers.module';
+import { AdsModule } from './modules/ads/ads.module';
+import { NotificationCampaignsModule } from './modules/notification-campaigns/notification-campaigns.module';
+import { AuditLogModule } from './modules/audit-log/audit-log.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { DriversModule } from './modules/drivers/drivers.module';
 import { EmployeesModule } from './modules/employees/employees.module';
@@ -51,6 +55,9 @@ import { JobsModule } from './modules/jobs/jobs.module';
     FavoritesModule,
     ReviewsModule,
     OffersModule,
+    AdsModule,
+    NotificationCampaignsModule,
+    AuditLogModule,
     UploadModule,
     DriversModule,
     EmployeesModule,
@@ -61,6 +68,7 @@ import { JobsModule } from './modules/jobs/jobs.module';
     LocationsModule,
     JobsModule,
   ],
+  controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

@@ -12,7 +12,6 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useMutation } from "@tanstack/react-query";
 import * as authApi from "@/lib/endpoints/auth";
-import { useAuthStore } from "@/store/authStore";
 import { colors, fonts, spacing } from "@/theme";
 import { Button } from "@/components/Button";
 import { FormField } from "@/components/FormField";
@@ -20,7 +19,6 @@ import { t } from "@/i18n";
 
 export default function Register() {
   const router = useRouter();
-  const setAuth = useAuthStore((s) => s.setAuth);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -30,8 +28,9 @@ export default function Register() {
   const mutation = useMutation({
     mutationFn: () => authApi.register({ fullName, email, phone, password }),
     onSuccess: (data) => {
-      setAuth(data.user, data.accessToken, data.refreshToken);
-      router.replace("/(tabs)");
+      // Account is created but unverified — complete the flow on the code
+      // screen instead of logging straight in.
+      router.replace({ pathname: "/(auth)/verify", params: { email: data.email } });
     },
     onError: () => setError(t("common.error")),
   });
@@ -93,7 +92,7 @@ export default function Register() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.white },
+  container: { flex: 1, backgroundColor: colors.white, paddingTop: -40 },
   content: { padding: spacing(6), flexGrow: 1, justifyContent: "center" },
   title: {
     fontFamily: fonts.headingExtrabold,

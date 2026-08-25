@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 
@@ -34,18 +34,38 @@ export class ProductsService {
     return product;
   }
 
-  create(dto: CreateProductDto) {
+  async create(userId: string, role: string, dto: CreateProductDto) {
+    await this.assertStoreAccess(dto.storeId, userId, role);
     return this.prisma.product.create({ data: dto });
   }
 
-  update(id: string, dto: Partial<CreateProductDto>) {
-    return this.prisma.product.update({ where: { id }, data: dto });
+  async update(id: string, userId: string, role: string, dto: Partial<CreateProductDto>) {
+    const product = await this.findOne(id);
+    await this.assertStoreAccess(product.storeId, userId, role);
+    const { storeId: _ignored, ...rest } = dto;
+    return this.prisma.product.update({ where: { id }, data: rest });
   }
 
-  remove(id: string) {
+  async remove(id: string, userId: string, role: string) {
+    const product = await this.findOne(id);
+    await this.assertStoreAccess(product.storeId, userId, role);
     return this.prisma.product.update({
       where: { id },
       data: { isDeleted: true, deletedAt: new Date() },
     });
+  }
+
+  // Same ownership rule as orders/offers/ads: privileged roles manage
+  // anything, a STORE_OWNER manages their own store, and an EMPLOYEE needs
+  // an actual StoreMember row for that store — not just "any employee".
+  private async assertStoreAccess(storeId: string, userId: string, role: string) {
+    if (['ADMIN', 'SUPER_ADMIN'].includes(role)) return;
+    const store = await this.prisma.store.findUnique({ where: { id: storeId } });
+    if (!store) throw new NotFoundException('Store not found');
+    if (store.ownerId === userId) return;
+    const membership = await this.prisma.storeMember.findUnique({
+      where: { storeId_userId: { storeId, userId } },
+    });
+    if (!membership) throw new ForbiddenException('You do not have access to this store');
   }
 }

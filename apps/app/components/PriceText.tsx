@@ -9,12 +9,14 @@ export function PriceText({
   strike = false,
   style,
 }: {
-  value: number;
+  value?: number | null;
   size?: number;
   color?: string;
   strike?: boolean;
   style?: TextStyle;
 }) {
+  const price = Number(value ?? 0);
+
   return (
     <Text
       style={[
@@ -27,7 +29,7 @@ export function PriceText({
         style,
       ]}
     >
-      {value.toFixed(0)} {CURRENCY_SUFFIX}
+      {price.toFixed(0)} {CURRENCY_SUFFIX}
     </Text>
   );
 }

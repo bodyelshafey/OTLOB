@@ -32,6 +32,7 @@ import { i18n, isRTL } from "@/i18n";
 import { OfflineBanner } from "@/components/Feedback";
 import { useIsOnline } from "@/hooks/useIsOnline";
 import { useNotificationSocket } from "@/hooks/useNotificationSocket";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -42,6 +43,7 @@ const queryClient = new QueryClient({
 });
 
 export default function RootLayout() {
+
   const [fontsLoaded] = useFonts({
     Cairo_600SemiBold,
     Cairo_700Bold,
@@ -51,6 +53,7 @@ export default function RootLayout() {
     Tajawal_700Bold,
     IBMPlexMono_500Medium,
     IBMPlexMono_600SemiBold,
+    cyberjunkies: require("../assets/fonts/Cyberjunkies.ttf"),
   });
 
   const locale = useSettingsStore((s) => s.locale);
@@ -109,6 +112,7 @@ function AuthGate() {
   const router = useRouter();
   const online = useIsOnline();
   useNotificationSocket();
+  usePushNotifications();
 
   useEffect(() => {
     const inAuthGroup = segments[0] === "(auth)";

@@ -30,7 +30,11 @@ export default function CheckoutPage() {
       // Sync the local cart into the backend cart, then submit checkout in one shot.
       await api.delete('/cart');
       for (const line of lines) {
-        await api.post('/cart', { productId: line.product.id, quantity: line.quantity });
+        if (line.offer) {
+          await api.post('/cart', { offerId: line.offer.id, quantity: line.quantity });
+        } else if (line.product) {
+          await api.post('/cart', { productId: line.product.id, quantity: line.quantity });
+        }
       }
 
       const { data } = await api.post('/orders', {

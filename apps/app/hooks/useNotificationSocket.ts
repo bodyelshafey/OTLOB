@@ -4,12 +4,11 @@ import { getSocket } from "@/lib/socket";
 import { useAuthStore } from "@/store/authStore";
 
 /**
- * Push notifications: the API reference doesn't expose a device-token
- * registration endpoint, so per spec we do NOT invent one. Instead we rely
- * on this socket listener for in-app notification delivery. If/when the
- * backend adds something like POST /notifications/register-device, wire
- * Expo Notifications' push token into it here and this hook can stay as
- * the in-app fallback for when the app is foregrounded.
+ * In-app live notification delivery via the realtime socket — refreshes
+ * the notifications list the moment the backend emits one, so a customer
+ * with the app open sees an order update without waiting for a push
+ * notification (which only wakes a backgrounded/closed app). Push delivery
+ * itself is handled separately by usePushNotifications.ts.
  */
 export function useNotificationSocket() {
   const accessToken = useAuthStore((s) => s.accessToken);

@@ -7,9 +7,9 @@ import {
 import { OrderStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
-import { NotificationsService } from '../notifications/notifications.service';
 import { JobsService } from '../jobs/jobs.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { isStoreOpenNow } from '../../common/utils/store-hours.util';
 
 // Valid forward transitions for order lifecycle
 const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
@@ -27,7 +27,6 @@ export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private realtimeGateway: RealtimeGateway,
-    private notificationsService: NotificationsService,
     private jobsService: JobsService,
   ) {}
 
@@ -39,8 +38,14 @@ export class OrdersService {
         include: { product: true, offer: true },
       });
 
+      // A cart line is either a product or an offer (never both) — filtering
+      // on item.product?.storeId alone silently drops every offer-based
+      // line from checkout (product is null there), even though the rest
+      // of this method already computes totals and order items for offers
+      // correctly. That's a live bug: any cart containing an offer would
+      // checkout as if that item didn't exist.
       const storeItems = cartItems.filter(
-        (item) => item.product?.storeId === dto.storeId,
+        (item) => (item.product?.storeId ?? item.offer?.storeId) === dto.storeId,
       );
 
       if (storeItems.length === 0) {
@@ -49,10 +54,15 @@ export class OrdersService {
 
       const store = await tx.store.findUnique({
         where: { id: dto.storeId },
-        include: { settings: true },
+        include: { settings: true, workingHours: true },
       });
       if (!store || store.isDeleted) throw new NotFoundException('Store not found');
-      if (!store.isOpen) throw new BadRequestException('Store is currently closed');
+      // Blocks checkout both on the manual isOpen toggle and the configured
+      // weekly schedule — a store with no schedule configured is only
+      // gated by isOpen, unchanged from before this feature existed.
+      if (!isStoreOpenNow(store.isOpen, store.workingHours)) {
+        throw new BadRequestException('Store is currently closed');
+      }
 
       const subtotal = storeItems.reduce((sum, item) => {
         const price = item.product?.price ?? item.offer?.newPrice ?? 0;
@@ -117,14 +127,87 @@ export class OrdersService {
       where: { userId },
       include: { items: true, store: true },
       orderBy: { createdAt: 'desc' },
+      // A long-time customer's full order history was previously
+      // unbounded — this returns the most recent 100, which covers
+      // realistic "my orders" usage without changing the response shape
+      // (still a flat array) or requiring any frontend change.
+      take: 100,
     });
   }
 
-  async findStoreOrders(storeId: string) {
+  async findStoreOrders(storeId: string, userId: string, role: string) {
+    await this.assertStoreAccess(storeId, userId, role);
     return this.prisma.order.findMany({
       where: { storeId },
       include: { items: true, user: { select: { fullName: true, phone: true } } },
       orderBy: { createdAt: 'desc' },
+      // Same reasoning as findMyOrders — an established store's full order
+      // history was unbounded before. The merchant dashboard shows recent
+      // activity; older history stays available via reports/exports rather
+      // than loading every row on every dashboard visit.
+      take: 200,
+    });
+  }
+
+  // A merchant's own EMPLOYEE/CASHIER staff (StoreMember rows) may also view
+  // that store's orders — matches the @Roles(STORE_OWNER, EMPLOYEE, ...) list
+  // already on the controller, which previously wasn't backed by any actual
+  // per-store check here.
+  private async assertStoreAccess(storeId: string, userId: string, role: string) {
+    if (['ADMIN', 'SUPER_ADMIN'].includes(role)) return;
+    const store = await this.prisma.store.findUnique({ where: { id: storeId } });
+    if (!store) throw new NotFoundException('Store not found');
+    if (store.ownerId === userId) return;
+    const membership = await this.prisma.storeMember.findUnique({
+      where: { storeId_userId: { storeId, userId } },
+    });
+    if (!membership) throw new ForbiddenException('You do not have access to this store');
+  }
+
+  // updateStatus() previously trusted the controller's role list alone —
+  // any STORE_OWNER/EMPLOYEE/DRIVER account could change the status of
+  // *any* order, not just their own store's or their own delivery. This
+  // checks the specific order against the caller's actual relationship to
+  // it, same as assertStoreAccess above but also covering the DRIVER case
+  // (must be the order's assigned driver, not just "a" driver).
+  private async assertStatusChangeAccess(
+    order: { storeId: string; driverId: string | null },
+    userId: string,
+    role: string,
+  ) {
+    if (['ADMIN', 'SUPER_ADMIN'].includes(role)) return;
+    if (role === 'DRIVER') {
+      const driver = await this.prisma.driver.findUnique({ where: { userId } });
+      if (!driver || order.driverId !== driver.id) {
+        throw new ForbiddenException('You are not the assigned driver for this order');
+      }
+      return;
+    }
+    await this.assertStoreAccess(order.storeId, userId, role);
+  }
+
+  // Admin-wide order listing — separate from /orders/store/:id which is
+  // scoped to one store.
+  async findAllForAdmin(status?: string, search?: string) {
+    return this.prisma.order.findMany({
+      where: {
+        ...(status ? { orderStatus: status as OrderStatus } : {}),
+        ...(search
+          ? {
+              OR: [
+                { user: { fullName: { contains: search, mode: 'insensitive' } } },
+                { user: { phone: { contains: search, mode: 'insensitive' } } },
+                { store: { name: { contains: search, mode: 'insensitive' } } },
+              ],
+            }
+          : {}),
+      },
+      include: {
+        store: { select: { id: true, name: true } },
+        user: { select: { fullName: true, phone: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
     });
   }
 
@@ -146,9 +229,11 @@ export class OrdersService {
     return order;
   }
 
-  async updateStatus(id: string, newStatus: OrderStatus, changedBy: string) {
+  async updateStatus(id: string, newStatus: OrderStatus, changedBy: string, role: string) {
     const order = await this.prisma.order.findUnique({ where: { id } });
     if (!order) throw new NotFoundException('Order not found');
+
+    await this.assertStatusChangeAccess(order, changedBy, role);
 
     const allowed = ALLOWED_TRANSITIONS[order.orderStatus];
     if (!allowed.includes(newStatus)) {
@@ -177,13 +262,20 @@ export class OrdersService {
       CANCELLED: { ar: 'تم إلغاء طلبك', en: 'Your order was cancelled' },
     };
     const label = statusLabels[newStatus];
-    await this.notificationsService.create(
-      order.userId,
-      label.ar,
-      label.en,
-      `طلب رقم ${id.slice(0, 8)}`,
-      `Order ${id.slice(0, 8)}`,
-    );
+    // Queued, not awaited-synchronously-into-a-DB-write-and-push-call — the
+    // order status transition itself (already committed above) must stay
+    // fast and reliable regardless of notification delivery, which involves
+    // a network call to Expo's push service and shouldn't block this response.
+    await this.jobsService.queueOrderNotification({
+      userId: order.userId,
+      titleAr: label.ar,
+      titleEn: label.en,
+      bodyAr: `طلب رقم ${id.slice(0, 8)}`,
+      bodyEn: `Order ${id.slice(0, 8)}`,
+      type: 'ORDER_STATUS',
+      data: { orderId: id, status: newStatus },
+      orderId: id,
+    });
 
     if (newStatus === 'COMPLETED') {
       await this.jobsService.scheduleDailyStoreReport(order.storeId);

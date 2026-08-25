@@ -1,19 +1,39 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Product } from '@/types';
+import type { Product, Offer } from '@/types';
 
+// A line is either a regular product or an offer — never both. Kept as two
+// optional fields (instead of a union) so existing call sites that only
+// ever dealt with `.product` keep working unchanged.
 export interface LocalCartLine {
-  product: Product;
+  product?: Product;
+  offer?: Offer;
   quantity: number;
   note?: string;
+}
+
+// Shared accessors so screens don't need to branch on product/offer everywhere.
+export function lineId(line: LocalCartLine): string {
+  return (line.product?.id ?? line.offer?.id)!;
+}
+export function lineName(line: LocalCartLine): string {
+  return line.product?.name ?? line.offer?.titleAr ?? '';
+}
+export function lineImage(line: LocalCartLine): string | undefined {
+  return (line.product?.image ?? line.offer?.image) ?? undefined;
+}
+export function linePrice(line: LocalCartLine): number {
+  if (line.product) return line.product.price;
+  return Number(line.offer?.newPrice ?? line.offer?.oldPrice ?? 0);
 }
 
 interface CartState {
   storeId: string | null;
   lines: LocalCartLine[];
   addItem: (product: Product, quantity?: number) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
-  removeItem: (productId: string) => void;
+  addOffer: (offer: Offer, quantity?: number) => void;
+  updateQuantity: (lineItemId: string, quantity: number) => void;
+  removeItem: (lineItemId: string) => void;
   clear: () => void;
   subtotal: () => number;
 }
@@ -31,32 +51,51 @@ export const useCartStore = create<CartState>()(
           set({ storeId: product.storeId, lines: [{ product, quantity }] });
           return;
         }
-        const existing = lines.find((l) => l.product.id === product.id);
+        const existing = lines.find((l) => l.product?.id === product.id);
         if (existing) {
           set({
             lines: lines.map((l) =>
-              l.product.id === product.id ? { ...l, quantity: l.quantity + quantity } : l,
+              l.product?.id === product.id ? { ...l, quantity: l.quantity + quantity } : l,
             ),
           });
         } else {
           set({ storeId: product.storeId, lines: [...lines, { product, quantity }] });
         }
       },
-      updateQuantity: (productId, quantity) => {
+      addOffer: (offer, quantity = 1) => {
+        const offerStoreId = offer.storeId ?? offer.store?.id;
+        if (!offerStoreId) return;
+        const { storeId, lines } = get();
+        if (storeId && storeId !== offerStoreId) {
+          set({ storeId: offerStoreId, lines: [{ offer, quantity }] });
+          return;
+        }
+        const existing = lines.find((l) => l.offer?.id === offer.id);
+        if (existing) {
+          set({
+            lines: lines.map((l) =>
+              l.offer?.id === offer.id ? { ...l, quantity: l.quantity + quantity } : l,
+            ),
+          });
+        } else {
+          set({ storeId: offerStoreId, lines: [...lines, { offer, quantity }] });
+        }
+      },
+      updateQuantity: (lineItemId, quantity) => {
         if (quantity <= 0) {
-          get().removeItem(productId);
+          get().removeItem(lineItemId);
           return;
         }
         set({
-          lines: get().lines.map((l) => (l.product.id === productId ? { ...l, quantity } : l)),
+          lines: get().lines.map((l) => (lineId(l) === lineItemId ? { ...l, quantity } : l)),
         });
       },
-      removeItem: (productId) => {
-        const remaining = get().lines.filter((l) => l.product.id !== productId);
+      removeItem: (lineItemId) => {
+        const remaining = get().lines.filter((l) => lineId(l) !== lineItemId);
         set({ lines: remaining, storeId: remaining.length ? get().storeId : null });
       },
       clear: () => set({ storeId: null, lines: [] }),
-      subtotal: () => get().lines.reduce((sum, l) => sum + l.product.price * l.quantity, 0),
+      subtotal: () => get().lines.reduce((sum, l) => sum + linePrice(l) * l.quantity, 0),
     }),
     { name: 'otlob-cart' },
   ),

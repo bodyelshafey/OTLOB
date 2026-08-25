@@ -47,6 +47,7 @@ export const fonts = {
   bodyBold: "Tajawal_700Bold",
   mono: "IBMPlexMono_500Medium",
   monoSemibold: "IBMPlexMono_600SemiBold",
+  brand: "cyberjunkies",
 };
 
 export const typography = {

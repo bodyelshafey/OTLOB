@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Otlob",
+    "appName": "OTLOB",
     "loading": "Loading...",
     "retry": "Retry",
     "cancel": "Cancel",
@@ -15,6 +15,7 @@
     "seeAll": "See all",
     "back": "Back",
     "next": "Next",
+    "location": "Location",
     "done": "Done"
   },
   "auth": {
@@ -28,12 +29,23 @@
     "haveAccount": "Already have an account?",
     "welcome": "Welcome to Otlob",
     "welcomeSubtitle": "Everything you need from the New Capital, in one place",
-    "logout": "Log out"
+    "logout": "Log out",
+    "verifyTitle": "Verify your email",
+    "verifySubtitle": "We sent a 6-digit code to",
+    "verifyButton": "Verify",
+    "resendCode": "Resend code",
+    "resendIn": "Resend in",
+    "invalidCode": "Incorrect code, try again",
+    "codeSent": "A new code was sent",
+    "emailNotVerified": "Please verify your email first"
   },
   "home": {
+    "title": "Otlob you wish",
+    "mark": "!",
     "searchPlaceholder": "Search for a store or product...",
     "storeTypes": "Categories",
     "todaysOffers": "Today's offers",
+    "seeMoreOffers": "See more",
     "nearbyStores": "Stores near you"
   },
   "store": {
@@ -46,6 +58,58 @@
     "unavailable": "Unavailable",
     "allCategories": "All",
     "noProducts": "No products in this category"
+  },
+  "offer": {
+    "title": "Offer details",
+    "viewStore": "Visit store",
+    "allOffers": "All offers",
+    "empty": "No offers available right now",
+    "addedToCart": "Offer added to cart"
+  },
+  "dashboard": {
+    "overview": "Overview",
+    "orders": "Orders",
+    "products": "Products",
+    "offers": "Offers",
+    "stores": "Stores",
+    "commission": "Commission",
+    "totalOrders": "Total orders",
+    "totalRevenue": "Total order value",
+    "commissionRate": "Commission rate",
+    "amountOwed": "Commission owed",
+    "netEarnings": "Your net earnings",
+    "averageRating": "Average rating",
+    "noOrders": "No orders",
+    "noProducts": "No products",
+    "noOffers": "No offers",
+    "newProduct": "New product",
+    "newOffer": "New offer",
+    "productName": "Product name",
+    "price": "Price",
+    "oldPrice": "Price before",
+    "newPrice": "Price after",
+    "category": "Category",
+    "newCategory": "New category",
+    "categoryName": "Category name",
+    "available": "Available",
+    "unavailable": "Unavailable",
+    "active": "Active",
+    "inactive": "Inactive",
+    "chooseImage": "Choose image",
+    "uploading": "Uploading...",
+    "saving": "Saving...",
+    "acceptOrder": "Accept order",
+    "startPreparing": "Start preparing",
+    "markReady": "Mark ready",
+    "outForDelivery": "Out for delivery",
+    "markDelivered": "Mark delivered",
+    "platformOverview": "Platform overview",
+    "usersCount": "Users",
+    "storesCount": "Stores",
+    "openStore": "Open store",
+    "closeStore": "Close store",
+    "suspendStore": "Suspend store",
+    "suspendConfirm": "This store will be suspended and hidden from customers. Continue?"
   },
   "cart": {
     "title": "Cart",
@@ -106,6 +170,19 @@
     "storeDashboard": "Store dashboard",
     "driverDashboard": "Driver dashboard",
     "adminDashboard": "Admin dashboard"
+  },
+  "notif": {
+    "title": "Notifications",
+    "empty": "No notifications yet",
+    "markAllRead": "Mark all as read",
+    "error": "Couldn't load notifications",
+    "retry": "Retry",
+    "type": {
+      "ORDER_STATUS": "Order update",
+      "PROMO": "Promotion",
+      "SYSTEM": "System",
+      "ADMIN_ANNOUNCEMENT": "Announcement"
+    }
   },
   "tabs": {
     "home": "Home",

@@ -52,7 +52,7 @@ export default function StoresScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.bg, paddingTop: -40 },
   header: { padding: spacing(5) },
   searchBar: {
     flexDirection: "row",

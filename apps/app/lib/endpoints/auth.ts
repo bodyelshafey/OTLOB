@@ -7,6 +7,12 @@ interface AuthResponse {
   refreshToken: string;
 }
 
+interface RegisterResponse {
+  message: string;
+  email: string;
+  requiresVerification: true;
+}
+
 export function login(email: string, password: string) {
   return api
     .post<AuthResponse>("/auth/login", { email, password })
@@ -19,7 +25,15 @@ export function register(payload: {
   phone: string;
   password: string;
 }) {
-  return api.post<AuthResponse>("/auth/register", payload).then((r) => r.data);
+  return api.post<RegisterResponse>("/auth/register", payload).then((r) => r.data);
+}
+
+export function verifyEmail(email: string, code: string) {
+  return api.post<AuthResponse>("/auth/verify-email", { email, code }).then((r) => r.data);
+}
+
+export function resendVerification(email: string) {
+  return api.post<{ message: string }>("/auth/resend-verification", { email }).then((r) => r.data);
 }
 
 export function logout() {

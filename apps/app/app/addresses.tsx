@@ -119,7 +119,7 @@ export default function AddressesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.bg, paddingTop: -40 },
   card: {
     flexDirection: "row",
     justifyContent: "space-between",

@@ -18,7 +18,22 @@ export class EmployeesService {
     });
   }
 
-  listMembers(storeId: string) {
+  // Previously any STORE_OWNER could list ANY store's staff roster (names,
+  // emails, phone numbers) just by knowing/guessing a storeId — the
+  // @Roles(STORE_OWNER, ...) on the controller only checked the caller had
+  // *a* store, never that it was *this* store.
+  async listMembers(storeId: string, requesterId: string, requesterRole: string) {
+    const isPrivileged = ['ADMIN', 'SUPER_ADMIN'].includes(requesterRole);
+    if (!isPrivileged) {
+      const store = await this.prisma.store.findUnique({ where: { id: storeId } });
+      if (!store) throw new NotFoundException('Store not found');
+      if (store.ownerId !== requesterId) {
+        const membership = await this.prisma.storeMember.findUnique({
+          where: { storeId_userId: { storeId, userId: requesterId } },
+        });
+        if (!membership) throw new ForbiddenException('You do not have access to this store');
+      }
+    }
     return this.prisma.storeMember.findMany({
       where: { storeId },
       include: { user: { select: { fullName: true, email: true, phone: true } } },

@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "أطلب",
+    "appName": "OTLOB",
     "loading": "جاري التحميل...",
     "retry": "إعادة المحاولة",
     "cancel": "إلغاء",
@@ -15,6 +15,7 @@
     "seeAll": "عرض الكل",
     "back": "رجوع",
     "next": "التالي",
+    "location": "الموقع",
     "done": "تم"
   },
   "auth": {
@@ -28,12 +29,23 @@
     "haveAccount": "لديك حساب بالفعل؟",
     "welcome": "مرحبًا بك في أطلب",
     "welcomeSubtitle": "كل ما تحتاجه من العاصمة الإدارية الجديدة، في مكان واحد",
-    "logout": "تسجيل الخروج"
+    "logout": "تسجيل الخروج",
+    "verifyTitle": "تأكيد البريد الإلكتروني",
+    "verifySubtitle": "أرسلنا رمز تحقق مكوّن من 6 أرقام إلى",
+    "verifyButton": "تأكيد",
+    "resendCode": "إعادة إرسال الرمز",
+    "resendIn": "إعادة الإرسال بعد",
+    "invalidCode": "الرمز غير صحيح، حاول مرة أخرى",
+    "codeSent": "تم إرسال رمز جديد",
+    "emailNotVerified": "يجب تأكيد بريدك الإلكتروني أولًا"
   },
   "home": {
+    "title": "أطلب الي تتمناه",
+    "mark": "!",
     "searchPlaceholder": "ابحث عن متجر أو منتج...",
     "storeTypes": "الأقسام",
     "todaysOffers": "عروض اليوم",
+    "seeMoreOffers": "عرض المزيد",
     "nearbyStores": "متاجر بالقرب منك"
   },
   "store": {
@@ -46,6 +58,58 @@
     "unavailable": "غير متوفر",
     "allCategories": "الكل",
     "noProducts": "لا توجد منتجات في هذا القسم"
+  },
+  "offer": {
+    "title": "تفاصيل العرض",
+    "viewStore": "زيارة المتجر",
+    "allOffers": "كل العروض",
+    "empty": "لا توجد عروض متاحة حاليًا",
+    "addedToCart": "تمت إضافة العرض للسلة"
+  },
+  "dashboard": {
+    "overview": "نظرة عامة",
+    "orders": "الطلبات",
+    "products": "المنتجات",
+    "offers": "العروض",
+    "stores": "المتاجر",
+    "commission": "العمولة",
+    "totalOrders": "إجمالي الطلبات",
+    "totalRevenue": "إجمالي قيمة الطلبات",
+    "commissionRate": "نسبة العمولة",
+    "amountOwed": "العمولة المستحقة",
+    "netEarnings": "صافي مستحقاتك",
+    "averageRating": "متوسط التقييم",
+    "noOrders": "لا توجد طلبات",
+    "noProducts": "لا توجد منتجات",
+    "noOffers": "لا توجد عروض",
+    "newProduct": "منتج جديد",
+    "newOffer": "عرض جديد",
+    "productName": "اسم المنتج",
+    "price": "السعر",
+    "oldPrice": "السعر قبل",
+    "newPrice": "السعر بعد",
+    "category": "القسم",
+    "newCategory": "قسم جديد",
+    "categoryName": "اسم القسم",
+    "available": "متاح",
+    "unavailable": "غير متاح",
+    "active": "مفعّل",
+    "inactive": "متوقف",
+    "chooseImage": "اختر صورة",
+    "uploading": "جارِ الرفع...",
+    "saving": "جارِ الحفظ...",
+    "acceptOrder": "قبول الطلب",
+    "startPreparing": "بدء التحضير",
+    "markReady": "الطلب جاهز",
+    "outForDelivery": "خرج للتوصيل",
+    "markDelivered": "تم التسليم",
+    "platformOverview": "نظرة عامة على المنصة",
+    "usersCount": "المستخدمين",
+    "storesCount": "المتاجر",
+    "openStore": "فتح المتجر",
+    "closeStore": "إغلاق المتجر",
+    "suspendStore": "تعليق المتجر",
+    "suspendConfirm": "سيتم تعليق هذا المتجر ولن يظهر للعملاء. متابعة؟"
   },
   "cart": {
     "title": "السلة",
@@ -106,6 +170,19 @@
     "storeDashboard": "لوحة تحكم المتجر",
     "driverDashboard": "لوحة تحكم السائق",
     "adminDashboard": "لوحة تحكم الإدارة"
+  },
+  "notif": {
+    "title": "الإشعارات",
+    "empty": "لا توجد إشعارات بعد",
+    "markAllRead": "تعليم الكل كمقروء",
+    "error": "تعذر تحميل الإشعارات",
+    "retry": "إعادة المحاولة",
+    "type": {
+      "ORDER_STATUS": "تحديث الطلب",
+      "PROMO": "عرض ترويجي",
+      "SYSTEM": "النظام",
+      "ADMIN_ANNOUNCEMENT": "إعلان"
+    }
   },
   "tabs": {
     "home": "الرئيسية",

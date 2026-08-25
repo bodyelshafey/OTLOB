@@ -4,7 +4,7 @@ import { useRouter, Stack } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, radii, spacing } from "@/theme";
-import { useCartStore } from "@/store/cartStore";
+import { useCartStore, lineId, lineName, lineImage, linePrice } from "@/store/cartStore";
 import { useStore } from "@/hooks/useCatalog";
 import { PriceText } from "@/components/PriceText";
 import { Button } from "@/components/Button";
@@ -27,23 +27,30 @@ export default function CartScreen() {
           {!!store.data?.name && <Text style={styles.storeName}>{store.data.name}</Text>}
           <FlatList
             data={lines}
-            keyExtractor={(l) => l.product.id}
+            keyExtractor={(l) => lineId(l)}
             contentContainerStyle={{ padding: spacing(5), gap: 12 }}
             renderItem={({ item }) => (
               <View style={styles.line}>
-                <Image source={{ uri: item.product.image ?? undefined }} style={styles.image} />
+                <Image source={{ uri: lineImage(item) }} style={styles.image} />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.name} numberOfLines={1}>
-                    {item.product.name}
-                  </Text>
-                  <PriceText value={item.product.price * item.quantity} size={14} />
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                    <Text style={styles.name} numberOfLines={1}>
+                      {lineName(item)}
+                    </Text>
+                    {!!item.offer && (
+                      <View style={styles.offerBadge}>
+                        <Text style={styles.offerBadgeText}>{t("home.todaysOffers")}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <PriceText value={linePrice(item) * item.quantity} size={14} />
                 </View>
                 <View style={styles.stepper}>
-                  <Pressable onPress={() => updateQuantity(item.product.id, item.quantity - 1)} style={styles.stepBtn}>
+                  <Pressable onPress={() => updateQuantity(lineId(item), item.quantity - 1)} style={styles.stepBtn}>
                     <Ionicons name="remove" size={16} color={colors.ink} />
                   </Pressable>
                   <Text style={styles.qty}>{item.quantity}</Text>
-                  <Pressable onPress={() => updateQuantity(item.product.id, item.quantity + 1)} style={styles.stepBtn}>
+                  <Pressable onPress={() => updateQuantity(lineId(item), item.quantity + 1)} style={styles.stepBtn}>
                     <Ionicons name="add" size={16} color={colors.ink} />
                   </Pressable>
                 </View>
@@ -65,7 +72,7 @@ export default function CartScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.bg, paddingTop: -40 },
   storeName: {
     fontFamily: fonts.headingSemibold,
     fontSize: 15,
@@ -93,6 +100,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   qty: { fontFamily: fonts.bodyBold, fontSize: 14, color: colors.ink, minWidth: 18, textAlign: "center" },
+  offerBadge: {
+    backgroundColor: colors.accent,
+    borderRadius: radii.pill,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  offerBadgeText: { fontFamily: fonts.bodyBold, fontSize: 9, color: colors.white },
   footer: {
     padding: spacing(5),
     borderTopWidth: 1,

@@ -24,8 +24,8 @@ export function useIsOnline(pollMs = 10000) {
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 4000);
-        await fetch("https://otlob-production.up.railway.app/api", {
-          method: "HEAD",
+        await fetch("http://192.168.43.183:4000/api/health", {
+          method: "GET",
           signal: controller.signal,
         });
         clearTimeout(timeout);

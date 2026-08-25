@@ -42,7 +42,7 @@ function Option({ label, active, onPress }: { label: string; active: boolean; on
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.bg, paddingTop: -40 },
   option: {
     backgroundColor: colors.white,
     borderRadius: radii.md,

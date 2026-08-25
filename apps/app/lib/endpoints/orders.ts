@@ -16,7 +16,11 @@ export async function syncCartAndPlaceOrder(payload: {
 }) {
   await api.delete("/cart");
   for (const line of payload.lines) {
-    await api.post("/cart", { productId: line.product.id, quantity: line.quantity });
+    if (line.offer) {
+      await api.post("/cart", { offerId: line.offer.id, quantity: line.quantity });
+    } else if (line.product) {
+      await api.post("/cart", { productId: line.product.id, quantity: line.quantity });
+    }
   }
   const { data } = await api.post<Order>("/orders", {
     storeId: payload.storeId,
@@ -30,6 +34,10 @@ export async function syncCartAndPlaceOrder(payload: {
 
 export function getStoreOrders(storeId: string) {
   return api.get<Order[]>(`/orders/store/${storeId}`).then((r) => r.data);
+}
+
+export function getAllOrdersAdmin(params?: { status?: string; search?: string }) {
+  return api.get<Order[]>("/orders", { params }).then((r) => r.data);
 }
 
 export function getMyOrders() {

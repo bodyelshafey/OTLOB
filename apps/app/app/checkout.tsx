@@ -113,7 +113,7 @@ function PaymentOption({ label, active, onPress }: { label: string; active: bool
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.bg, paddingTop: -40 },
   sectionLabel: { fontFamily: fonts.bodyBold, fontSize: 14, color: colors.ink, marginBottom: 10, marginTop: 4 },
   addrOption: {
     backgroundColor: colors.white,

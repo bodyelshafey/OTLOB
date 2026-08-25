@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { LogOut, MapPin, Heart, ClipboardList, ChevronLeft, LayoutDashboard } from 'lucide-react';
+import { useMutation } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth-store';
 
 const DASHBOARD_PATH_BY_ROLE: Record<string, string> = {
@@ -16,6 +18,19 @@ const DASHBOARD_PATH_BY_ROLE: Record<string, string> = {
 export default function ProfilePage() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
+
+  // Calling the backend endpoint (not just clearing local state) is what
+  // actually invalidates the stored refresh token — without this, a token
+  // captured before "logging out" would keep working until it naturally
+  // expires. onSettled clears local state either way, same as mobile's
+  // logout flow, so a network hiccup never leaves the button looking stuck.
+  const logoutMutation = useMutation({
+    mutationFn: () => api.post('/auth/logout'),
+    onSettled: () => {
+      logout();
+      router.push('/');
+    },
+  });
 
   if (!user) {
     return (
@@ -79,11 +94,9 @@ export default function ProfilePage() {
         ))}
 
         <button
-          onClick={() => {
-            logout();
-            router.push('/');
-          }}
-          className="mt-2 flex items-center justify-center gap-2 rounded-xl2 bg-red-50 p-4 font-bold text-red-500"
+          onClick={() => logoutMutation.mutate()}
+          disabled={logoutMutation.isPending}
+          className="mt-2 flex items-center justify-center gap-2 rounded-xl2 bg-red-50 p-4 font-bold text-red-500 disabled:opacity-60"
         >
           <LogOut size={18} />
           تسجيل الخروج

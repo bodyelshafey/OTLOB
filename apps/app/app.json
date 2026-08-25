@@ -59,8 +59,8 @@
       ]
     ],
     "extra": {
-      "apiBaseUrl": "https://otlob-production.up.railway.app/api",
-      "socketUrl": "wss://otlob-production.up.railway.app/realtime",
+      "apiBaseUrl": "http://192.168.43.183:4000/api",
+      "socketUrl": "ws://192.168.43.183:4000/realtime",
       "eas": {
         "projectId": "ec9701ad-51de-4320-97eb-38f7ae8d08dd"
       },

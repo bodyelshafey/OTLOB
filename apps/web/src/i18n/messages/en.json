@@ -1,6 +1,7 @@
 {
   "common": {
     "brand": "OTLOB",
+    "tagline": "Otlob you wish!",
     "searchPlaceholder": "Search for a restaurant, pharmacy, or product...",
     "location": "New Capital",
     "browseByType": "Browse by type",

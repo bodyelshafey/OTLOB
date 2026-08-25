@@ -7,6 +7,8 @@ import { useTranslations } from 'next-intl';
 import clsx from 'clsx';
 import { useCartStore } from '@/store/cart-store';
 import { LocaleToggle } from './LocaleToggle';
+import { NavbarWave } from './decor/NavbarWave';
+import { HangingDecorations } from './decor/HangingDecorations';
 
 export function Header() {
   const lines = useCartStore((s) => s.lines);
@@ -22,7 +24,13 @@ export function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-primary-100 bg-white/90 backdrop-blur" style={{background: '#12bfe5',borderBottomLeftRadius: '20px',borderBottomRightRadius: '20px',}}>
+    <header
+  className="sticky top-0 z-40 relative"
+  style={{
+    background: '#12bfe5',
+    paddingBottom: '15px',
+  }}
+>
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 lg:px-8">
         <Link href="/" className="flex shrink-0 items-center gap-2">
           <span style={{color:'#fff',fontFamily:'cyberjunkies',fontSize: 'clamp(26px,4vw,42px)'}}>{t('brand')}</span>
@@ -67,6 +75,11 @@ export function Header() {
           </Link>
         </div>
       </div>
+      {/* Decorative wave + hanging decorations */}
+<div className="absolute left-0 right-0 bottom-0 translate-y-[1px] pointer-events-none">
+  <NavbarWave className="h-20 w-full text-primary-100" />
+  <HangingDecorations />
+</div>
     </header>
   );
 }

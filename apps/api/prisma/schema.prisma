@@ -5,7 +5,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ---------------------------------------------------------------------------
@@ -56,6 +55,15 @@ enum DriverStatus {
   ON_DELIVERY
 }
 
+// Shared review lifecycle for anything that needs admin sign-off before it
+// can go public (featured offers, ads). PENDING is the natural starting
+// state once a store owner requests homepage placement / creates an ad.
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 // ---------------------------------------------------------------------------
 // IDENTITY
 // ---------------------------------------------------------------------------
@@ -69,6 +77,7 @@ model User {
   avatar        String?
   role          UserRole @default(USER)
   isActive      Boolean  @default(true) @map("is_active")
+  isVerified    Boolean  @default(false) @map("is_verified")
   refreshToken  String?  @map("refresh_token")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
@@ -83,8 +92,31 @@ model User {
   notifications Notification[]
   driver        Driver?
   auditLogs     AuditLog[]
+  verificationCodes VerificationCode[]
+  pushTokens        PushToken[]
+  reviewedOffers    Offer[]            @relation("OfferReviewedBy")
+  reviewedAds       Ad[]               @relation("AdReviewedBy")
 
   @@map("users")
+}
+
+model VerificationCode {
+  id         String    @id @default(uuid())
+  user       User      @relation(fields: [userId], references: [id])
+  userId     String    @map("user_id")
+  // Hashed the same way passwords are (argon2) — never store the raw code.
+  codeHash   String    @map("code_hash")
+  // Single purpose today ("EMAIL_VERIFICATION"); kept as a plain string
+  // instead of a new enum so a future purpose (e.g. password reset) doesn't
+  // need a schema-level enum migration, just a new string value.
+  purpose    String    @default("EMAIL_VERIFICATION")
+  attempts   Int       @default(0)
+  expiresAt  DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("verification_codes")
 }
 
 model Driver {
@@ -140,6 +172,10 @@ model Store {
   deletedAt      DateTime? @map("deleted_at")
   createdAt      DateTime  @default(now()) @map("created_at")
 
+  // Overrides the global "ad_monthly_limit_default" Setting for this store
+  // specifically. Null = use the global default.
+  monthlyAdLimitOverride Int? @map("monthly_ad_limit_override")
+
   members        StoreMember[]
   categories     Category[]
   products       Product[]
@@ -148,6 +184,7 @@ model Store {
   reviews        Review[]
   favorites      Favorite[]
   ads            Ad[]
+  banners        Banner[]
   settings       StoreSettings?
   workingHours   WorkingHour[]
   dailyStats     StoreDailyStat[]
@@ -177,10 +214,13 @@ model Category {
   nameAr      String    @map("name_ar")
   nameEn      String    @map("name_en")
   image       String?
+  isActive    Boolean   @default(true) @map("is_active")
+  sortOrder   Int       @default(0) @map("sort_order")
   createdAt   DateTime  @default(now()) @map("created_at")
 
   products Product[]
 
+  @@index([storeId, isActive, sortOrder])
   @@map("categories")
 }
 
@@ -203,6 +243,7 @@ model Product {
   cartItems   CartItem[]
   orderItems  OrderItem[]
   favorites   Favorite[]
+  offers      Offer[]
 
   @@map("products")
 }
@@ -235,9 +276,36 @@ model Offer {
   deletedAt           DateTime? @map("deleted_at")
   createdAt           DateTime  @default(now()) @map("created_at")
 
+  // These three columns already existed on the live Supabase table before
+  // this migration (product_id, is_featured_home, display_order) — an
+  // earlier, never-finished attempt at featured offers that had no Prisma
+  // model or service code behind it. Reusing them here rather than adding
+  // a parallel "kind" concept, per Abdo's direction.
+  product           Product?       @relation(fields: [productId], references: [id])
+  productId         String?        @map("product_id")
+  // A normal offer never sets this. A store owner sets it to request
+  // homepage placement — that request then needs approvalStatus=APPROVED
+  // before it's actually homepage-eligible (see OffersService).
+  isFeaturedHome    Boolean        @default(false) @map("is_featured_home")
+  displayOrder      Int            @default(0) @map("display_order")
+  approvalStatus    ApprovalStatus @default(APPROVED) @map("approval_status")
+  rejectionReason   String?        @map("rejection_reason")
+  reviewedBy        User?          @relation("OfferReviewedBy", fields: [reviewedById], references: [id])
+  reviewedById      String?        @map("reviewed_by_id")
+  reviewedAt        DateTime?      @map("reviewed_at")
+
+  // All optional — a store owner can create a valid offer with just the
+  // fields above. These exist purely for an owner who wants to add richer
+  // detail (what's included, conditions, a cap on redemptions).
+  includedItems String? @map("included_items")
+  conditions    String?
+  quantityLimit Int?    @map("quantity_limit")
+
   cartItems  CartItem[]
   orderItems OrderItem[]
 
+  // Homepage "Today's Offers" query filters on exactly this combination.
+  @@index([isFeaturedHome, approvalStatus, isActive])
   @@map("offers")
 }
 
@@ -495,36 +563,119 @@ model Notification {
   id        String   @id @default(uuid())
   user      User     @relation(fields: [userId], references: [id])
   userId    String   @map("user_id")
+  // Free-form category string (not a DB enum) so new notification types
+  // don't need a schema migration — e.g. ORDER_STATUS, PROMO, SYSTEM,
+  // ADMIN_ANNOUNCEMENT. Client uses it to pick an icon and a deep link.
+  type      String   @default("SYSTEM")
   titleAr   String?  @map("title_ar")
   titleEn   String?  @map("title_en")
   bodyAr    String?  @map("body_ar")
   bodyEn    String?  @map("body_en")
+  // Deep-link payload, e.g. { "orderId": "..." } — lets the client navigate
+  // straight to the relevant screen on tap without guessing from the text.
+  data      Json?
   isRead    Boolean  @default(false) @map("is_read")
   createdAt DateTime @default(now()) @map("created_at")
 
+  @@index([userId])
   @@map("notifications")
 }
 
+model PushToken {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String   @map("user_id")
+  token      String   @unique
+  platform   String
+  createdAt  DateTime @default(now()) @map("created_at")
+  lastUsedAt DateTime @default(now()) @map("last_used_at")
+
+  @@index([userId])
+  @@map("push_tokens")
+}
+
+// One row per (notification, device) push attempt — lets delivery status
+// be tracked per device, not just "we tried to send this notification".
+// status: QUEUED | SENT | DELIVERED | FAILED | INVALID_TOKEN
+model PushDelivery {
+  id           String    @id @default(uuid())
+  token        String
+  ticketId     String?   @map("ticket_id")
+  status       String    @default("QUEUED")
+  errorMessage String?   @map("error_message")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  checkedAt    DateTime? @map("checked_at")
+
+  @@index([status])
+  @@map("push_deliveries")
+}
+
+model NotificationCampaign {
+  id             String    @id @default(uuid())
+  title          String
+  bodyAr         String    @map("body_ar")
+  bodyEn         String?   @map("body_en")
+  type           String    @default("PROMO")
+  // ALL | ROLE | USER | STORE_CUSTOMERS — kept as a plain string (like
+  // Notification.type) rather than a DB enum for the same reason: new
+  // targeting options shouldn't need a schema migration.
+  targetType     String    @map("target_type")
+  targetRole     String?   @map("target_role")
+  targetUserId   String?   @map("target_user_id")
+  targetStoreId  String?   @map("target_store_id")
+  status         String    @default("DRAFT")
+  scheduledAt    DateTime? @map("scheduled_at")
+  sentAt         DateTime? @map("sent_at")
+  recipientCount Int?      @map("recipient_count")
+  createdBy      String    @map("created_by")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@map("notification_campaigns")
+}
+
 model Ad {
-  id        String   @id @default(uuid())
-  store     Store?   @relation(fields: [storeId], references: [id])
-  storeId   String?  @map("store_id")
+  id        String    @id @default(uuid())
+  store     Store?    @relation(fields: [storeId], references: [id])
+  storeId   String?   @map("store_id")
   title     String?
   image     String?
   link      String?
-  isActive  Boolean  @default(true) @map("active")
-  createdAt DateTime @default(now()) @map("created_at")
+  isActive  Boolean   @default(true) @map("active")
+  sortOrder Int       @default(0) @map("sort_order")
+  startsAt  DateTime? @map("starts_at")
+  endsAt    DateTime? @map("ends_at")
+  createdAt DateTime  @default(now()) @map("created_at")
 
+  // Platform-wide ads (storeId null, admin/super-admin only) go straight to
+  // APPROVED — review + monthly quota only apply to merchant-created ads.
+  approvalStatus  ApprovalStatus @default(PENDING) @map("approval_status")
+  rejectionReason String?        @map("rejection_reason")
+  reviewedBy      User?          @relation("AdReviewedBy", fields: [reviewedById], references: [id])
+  reviewedById    String?        @map("reviewed_by_id")
+  reviewedAt      DateTime?      @map("reviewed_at")
+
+  @@index([storeId, createdAt])
+  @@index([approvalStatus])
   @@map("ads")
 }
 
 model Banner {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   title     String?
   image     String
   link      String?
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
+  isActive  Boolean   @default(true) @map("is_active")
+  sortOrder Int       @default(0) @map("sort_order")
+  startsAt  DateTime? @map("starts_at")
+  endsAt    DateTime? @map("ends_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  // Optional — lets an admin attribute a homepage banner to the store it's
+  // promoting, so the storefront can show "which store is this ad for"
+  // instead of just a generic title. Banners remain usable with no store
+  // (purely platform/seasonal banners) since this is nullable.
+  store   Store?  @relation(fields: [storeId], references: [id])
+  storeId String? @map("store_id")
 
   @@map("banners")
 }
@@ -556,7 +707,13 @@ model AuditLog {
   action    String
   tableName String   @map("table_name")
   recordId  String?  @map("record_id")
+  // Small, structured "what changed" summary — e.g. { before: {...}, after: {...} }
+  // or just the fields that changed. Never passwords/tokens/secrets.
+  metadata  Json?
+  ipAddress String?  @map("ip_address")
   createdAt DateTime @default(now()) @map("created_at")
 
+  @@index([userId])
+  @@index([tableName, recordId])
   @@map("audit_logs")
 }

@@ -54,6 +54,10 @@ async function main() {
       email: 'admin@otlob.app',
       passwordHash: adminPassword,
       role: UserRole.SUPER_ADMIN,
+      // Seeded accounts skip the email verification flow entirely — there's
+      // no inbox to receive a code, and this account needs to be usable
+      // immediately after seeding.
+      isVerified: true,
     },
   });
 

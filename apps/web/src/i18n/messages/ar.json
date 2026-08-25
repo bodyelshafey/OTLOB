@@ -1,6 +1,7 @@
 {
   "common": {
-    "brand": "أطلب",
+    "brand": "OTLOB",
+    "tagline": "أطلب إلي تتمناه!",
     "searchPlaceholder": "ابحث عن مطعم أو صيدلية أو منتج...",
     "location": "العاصمة الإدارية",
     "browseByType": "تصفح حسب النوع",

@@ -4,7 +4,7 @@ import { useAuthStore } from "@/store/authStore";
 
 const SOCKET_URL =
   (Constants.expoConfig?.extra as { socketUrl?: string } | undefined)
-    ?.socketUrl ?? "wss://otlob-production.up.railway.app/realtime";
+    ?.socketUrl ?? "ws://192.168.43.183:4000/realtime";
 
 let socket: Socket | null = null;
 
@@ -52,6 +52,9 @@ export function subscribeToStore(storeId: string) {
   getSocket().emit("store:subscribe", { storeId });
 }
 
-export function emitDriverLocation(lat: number, lng: number) {
-  getSocket().emit("driver:location", { lat, lng });
+export function emitDriverLocation(orderId: string, lat: number, lng: number) {
+  // orderId is required — the server now verifies the emitting client is
+  // actually that order's assigned driver before broadcasting a location
+  // update (previously anyone could spoof a location for any order).
+  getSocket().emit("driver:location", { orderId, lat, lng });
 }
