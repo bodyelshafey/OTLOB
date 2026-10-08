@@ -56,7 +56,9 @@
           "icon": "./assets/notification-icon.png",
           "color": "#12bfe5"
         }
-      ]
+      ],
+      "expo-splash-screen",
+      "expo-web-browser"
     ],
     "extra": {
       "apiBaseUrl": "https://otlob-production-d0da.up.railway.app/api",
