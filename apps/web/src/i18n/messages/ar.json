@@ -1,0 +1,18 @@
+{
+  "common": {
+    "brand": "OTLOB",
+    "tagline": "أطلب إلي تتمناه!",
+    "searchPlaceholder": "ابحث عن مطعم أو صيدلية أو منتج...",
+    "location": "العاصمة الإدارية",
+    "browseByType": "تصفح حسب النوع",
+    "todayOffers": "عروض اليوم",
+    "nearbyStores": "متاجر قريبة منك",
+    "seeAll": "عرض الكل",
+    "navHome": "الرئيسية",
+    "navStores": "المتاجر",
+    "navOrders": "طلباتي",
+    "navProfile": "حسابي",
+    "freeDelivery": "توصيل مجاني",
+    "closedNow": "مغلق حاليًا"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "common": {
+    "brand": "OTLOB",
+    "tagline": "Otlob you wish!",
+    "searchPlaceholder": "Search for a restaurant, pharmacy, or product...",
+    "location": "New Capital",
+    "browseByType": "Browse by type",
+    "todayOffers": "Today's offers",
+    "nearbyStores": "Stores near you",
+    "seeAll": "See all",
+    "navHome": "Home",
+    "navStores": "Stores",
+    "navOrders": "Orders",
+    "navProfile": "Profile",
+    "freeDelivery": "Free delivery",
+    "closedNow": "Closed now"
+  }
+}

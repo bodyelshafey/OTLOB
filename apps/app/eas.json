@@ -1,0 +1,29 @@
+{
+  "cli": {
+    "version": ">= 21.4.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://otlob-production-d0da.up.railway.app/api",
+        "EXPO_PUBLIC_SOCKET_URL": "wss://otlob-production-d0da.up.railway.app/realtime"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://otlob-production-d0da.up.railway.app/api",
+        "EXPO_PUBLIC_SOCKET_URL": "wss://otlob-production-d0da.up.railway.app/realtime"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

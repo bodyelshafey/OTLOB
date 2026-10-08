@@ -1,0 +1,71 @@
+{
+  "expo": {
+    "name": "أطلب",
+    "slug": "otlob",
+    "scheme": "otlob",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.otlob.app",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "نستخدم موقعك لعرض المتاجر القريبة منك وتتبع توصيل طلبك.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "السائقون يحتاجون مشاركة الموقع في الخلفية أثناء التوصيل حتى يتمكن العميل من تتبع الطلب.",
+        "UIBackgroundModes": [
+          "location",
+          "remote-notification"
+        ]
+      }
+    },
+    "android": {
+      "package": "com.otlob.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#12bfe5"
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "NOTIFICATIONS",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-localization",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "السائقون يحتاجون مشاركة الموقع في الخلفية أثناء التوصيل."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#12bfe5"
+        }
+      ]
+    ],
+    "extra": {
+      "apiBaseUrl": "https://otlob-production-d0da.up.railway.app/api",
+      "socketUrl": "ws://otlob-production-d0da.up.railway.app/realtime",
+      "eas": {
+        "projectId": "ec9701ad-51de-4320-97eb-38f7ae8d08dd"
+      },
+      "router": {}
+    },
+    "owner": "abdo_12345"
+  }
+}

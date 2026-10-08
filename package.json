@@ -1,0 +1,28 @@
+{
+  "name": "otlob",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+  "dev:app": "npm run start --workspace=@otlob/app",
+  "dev:web": "npm run dev --workspace=@otlob/web",
+  "dev:api": "npm run start:dev --workspace=@otlob/api",
+  "build:web": "npm run build --workspace=@otlob/web",
+  "build:api": "npm run build --workspace=@otlob/api",
+  "start": "npm run start:prod --workspace=@otlob/api",
+  "lint:web": "npm run lint --workspace=@otlob/web",
+  "lint:api": "npm run lint --workspace=@otlob/api"
+},
+  "engines": {
+    "node": ">=22.0.0 <25"
+  },
+  "overrides": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "dependencies": {
+    "expo-dev-client": "^57.0.10"
+  }
+}
