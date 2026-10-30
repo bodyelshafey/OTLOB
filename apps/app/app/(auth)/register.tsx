@@ -45,7 +45,7 @@ export default function Register() {
         return;
       }
       setShowLoginCta(false);
-      setError(body?.message ?? t("common.error"));
+      setError(typeof body?.message === "string" ? body.message : Array.isArray(body?.message) ? body.message.join("\n") : t("common.error"));
     },
   });
 

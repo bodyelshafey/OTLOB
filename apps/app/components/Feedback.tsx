@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, ActivityIndicator, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, radii } from "@/theme";
 import { t } from "@/i18n";
@@ -24,6 +24,22 @@ export function EmptyState({
     <View style={styles.centered}>
       <Ionicons name={icon} size={40} color={colors.inkMuted} />
       <Text style={styles.emptyText}>{message}</Text>
+    </View>
+  );
+}
+
+// Shown when a request FAILED (network/auth/server) — deliberately distinct
+// from EmptyState so a real failure is never presented as "you have no data".
+export function ErrorState({ message, onRetry }: { message?: string; onRetry?: () => void }) {
+  return (
+    <View style={styles.centered}>
+      <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
+      <Text style={styles.emptyText}>{message || t("common.error")}</Text>
+      {onRetry ? (
+        <Pressable onPress={onRetry} accessibilityRole="button" style={{ paddingVertical: 8, paddingHorizontal: 16 }}>
+          <Text style={{ fontFamily: fonts.bodyBold, color: colors.primary, fontSize: 14 }}>{t("common.retry")}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }

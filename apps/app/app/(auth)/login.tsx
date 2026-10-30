@@ -12,6 +12,7 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useMutation } from "@tanstack/react-query";
 import * as authApi from "@/lib/endpoints/auth";
+import { getApiErrorMessage } from "@/lib/apiError";
 import { useAuthStore } from "@/store/authStore";
 import { colors, fonts, spacing } from "@/theme";
 import { Button } from "@/components/Button";
@@ -44,7 +45,7 @@ export default function Login() {
         });
         return;
       }
-      setError(body?.message || err?.message || t("common.error"));
+      setError(getApiErrorMessage(err));
     },
   });
 

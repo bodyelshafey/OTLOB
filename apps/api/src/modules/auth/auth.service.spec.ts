@@ -121,12 +121,84 @@ describe('AuthService — phone-first auth, optional email', () => {
     });
   });
 
+  describe('register — duplicate handling (no side effects)', () => {
+    it('on a duplicate phone: creates no account, hashes nothing, and sends NO verification message', async () => {
+      prisma.user.findUnique.mockResolvedValue({ ...baseUser });
+      await expect(
+        service.register({ fullName: 'X', phone: '+201234567890', password: 'password123' }),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(prisma.user.create).not.toHaveBeenCalled();
+      expect(prisma.verificationCode.create).not.toHaveBeenCalled();
+      expect(otpService.sendPhoneVerificationCode).not.toHaveBeenCalled();
+    });
+
+    it('on a concurrent-registration race: exactly one request succeeds, the other gets 409 and triggers no OTP', async () => {
+      // Both requests pass the application-level pre-check (neither row exists
+      // yet); only the database unique constraint can separate them.
+      prisma.user.findUnique.mockResolvedValue(null);
+      let created = 0;
+      prisma.user.create.mockImplementation(async () => {
+        created += 1;
+        if (created === 1) return { ...baseUser };
+        throw Object.assign(new Error('Unique constraint failed'), {
+          name: 'PrismaClientKnownRequestError',
+          code: 'P2002',
+          meta: { target: ['phone'] },
+        });
+      });
+
+      const dto = { fullName: 'X', phone: '+201234567890', password: 'password123' };
+      const results = await Promise.allSettled([service.register(dto), service.register(dto)]);
+
+      expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      const rejected = results.filter((r) => r.status === 'rejected') as PromiseRejectedResult[];
+      expect(rejected).toHaveLength(1);
+      expect(rejected[0].reason).toBeInstanceOf(ConflictException);
+      expect(rejected[0].reason.getResponse()).toMatchObject({ code: 'PHONE_ALREADY_EXISTS' });
+      expect(otpService.sendPhoneVerificationCode).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not swallow a non-unique database failure as a conflict', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.create.mockRejectedValue(
+        Object.assign(new Error('connection refused'), { name: 'PrismaClientInitializationError' }),
+      );
+      await expect(
+        service.register({ fullName: 'X', phone: '+201234567890', password: 'password123' }),
+      ).rejects.toThrow('connection refused');
+      expect(otpService.sendPhoneVerificationCode).not.toHaveBeenCalled();
+    });
+  });
+
   describe('login — phone-or-email identifier, phone-only verification gate', () => {
     it('looks up by phone when the identifier has no "@"', async () => {
       const hash = await argon2.hash('correct-password');
       prisma.user.findUnique.mockResolvedValue({ ...baseUser, passwordHash: hash, phoneVerified: true });
       await service.login({ identifier: '+201234567890', password: 'correct-password' });
       expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { phone: '+201234567890' } });
+    });
+
+    it('finds an account registered as +201… when the user types the local 01… format at login', async () => {
+      const hash = await argon2.hash('correct-password');
+      prisma.user.findUnique.mockImplementation(async ({ where }: any) =>
+        where.phone === '+201234567890'
+          ? { ...baseUser, passwordHash: hash, phoneVerified: true }
+          : null,
+      );
+      const result = await service.login({ identifier: '01234567890', password: 'correct-password' });
+      expect((result as any).accessToken).toBeDefined();
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { phone: '+201234567890' } });
+    });
+
+    it('still finds a legacy account whose phone was stored un-normalized', async () => {
+      const hash = await argon2.hash('correct-password');
+      prisma.user.findUnique.mockImplementation(async ({ where }: any) =>
+        where.phone === '01143677691'
+          ? { ...baseUser, phone: '01143677691', passwordHash: hash, phoneVerified: true }
+          : null,
+      );
+      const result = await service.login({ identifier: '01143677691', password: 'correct-password' });
+      expect((result as any).accessToken).toBeDefined();
     });
 
     it('looks up by email when the identifier contains "@" (legacy phone-less accounts)', async () => {

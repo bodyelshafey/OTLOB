@@ -10,7 +10,7 @@ import * as argon2 from 'argon2';
 import { promises as dns } from 'dns';
 import { OAuth2Client } from 'google-auth-library';
 import { PrismaService } from '../../prisma/prisma.service';
-import { RegisterDto } from './dto/register.dto';
+import { RegisterDto, normalizeEgyptianPhone } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
@@ -329,7 +329,22 @@ export class AuthService {
     const looksLikeEmail = trimmed.includes('@');
     let user = looksLikeEmail
       ? await this.prisma.user.findUnique({ where: { email: trimmed.toLowerCase() } })
-      : await this.prisma.user.findUnique({ where: { phone: trimmed } });
+      : null;
+    if (!user && !looksLikeEmail) {
+      // Registration stores phones normalized to E.164 (+201xxxxxxxxx), so a
+      // user who typed "01xxxxxxxxx" at registration must be able to type
+      // the same thing at login. Try the normalized form first, then the raw
+      // value — a couple of legacy rows predate normalization and are stored
+      // as typed. Sequential (not an `in` query) so that the known
+      // duplicate-format legacy pair can never make the match ambiguous.
+      const normalized = normalizeEgyptianPhone(trimmed);
+      if (typeof normalized === 'string') {
+        user = await this.prisma.user.findUnique({ where: { phone: normalized } });
+      }
+      if (!user && normalized !== trimmed) {
+        user = await this.prisma.user.findUnique({ where: { phone: trimmed } });
+      }
+    }
     if (!user && !looksLikeEmail) {
       user = await this.prisma.user.findUnique({ where: { username: trimmed } });
     }

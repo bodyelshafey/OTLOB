@@ -8,7 +8,7 @@ import { colors, fonts, radii, spacing, shadow } from "@/theme";
 import * as engagement from "@/lib/endpoints/engagement";
 import { Button } from "@/components/Button";
 import { FormField } from "@/components/FormField";
-import { EmptyState, LoadingScreen } from "@/components/Feedback";
+import { EmptyState, LoadingScreen, ErrorState } from "@/components/Feedback";
 import { t } from "@/i18n";
 import type { District } from "@/lib/types";
 
@@ -42,6 +42,8 @@ export default function AddressesScreen() {
 
       {addresses.isLoading ? (
         <LoadingScreen />
+      ) : addresses.isError && !addresses.data ? (
+        <ErrorState onRetry={() => addresses.refetch()} />
       ) : (
         <FlatList
           data={addresses.data ?? []}

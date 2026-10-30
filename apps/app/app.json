@@ -2,7 +2,10 @@
   "expo": {
     "name": "أطلب",
     "slug": "otlob",
-    "scheme": "otlob",
+    "scheme": [
+      "otlob",
+      "com.otlob.app"
+    ],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -61,8 +64,8 @@
       "expo-web-browser"
     ],
     "extra": {
-      "apiBaseUrl": "https://otlob-production-d0da.up.railway.app/api",
-      "socketUrl": "ws://otlob-production-d0da.up.railway.app/realtime",
+      "apiBaseUrl": "https://otlob-api-production.up.railway.app/api",
+      "socketUrl": "wss://otlob-api-production.up.railway.app/realtime",
       "eas": {
         "projectId": "ec9701ad-51de-4320-97eb-38f7ae8d08dd"
       },

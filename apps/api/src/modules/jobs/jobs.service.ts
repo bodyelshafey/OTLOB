@@ -59,6 +59,16 @@ export class JobsService implements OnModuleInit {
   // auto-delivery scan — never the API's ability to start and serve
   // requests.
   onModuleInit() {
+    // Two API instances (e.g. Railway + a developer's local copy) pointed at
+    // the SAME database would each schedule their own scan against the same
+    // production orders. The scan is state-guarded, but a local instance
+    // running unreviewed code shouldn't be mutating shared orders at all —
+    // set AUTO_DELIVER_SCAN_ENABLED=false on any non-production instance.
+    // Unset/anything else keeps the existing behaviour (enabled).
+    if ((process.env.AUTO_DELIVER_SCAN_ENABLED ?? '').trim().toLowerCase() === 'false') {
+      this.logger.warn('Auto-delivery scan NOT scheduled (AUTO_DELIVER_SCAN_ENABLED=false)');
+      return;
+    }
     void this.registerAutoDeliverScanWithRetry();
   }
 

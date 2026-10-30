@@ -11,15 +11,15 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://otlob-production-d0da.up.railway.app/api",
-        "EXPO_PUBLIC_SOCKET_URL": "wss://otlob-production-d0da.up.railway.app/realtime"
+        "EXPO_PUBLIC_API_URL": "https://otlob-api-production.up.railway.app/api",
+        "EXPO_PUBLIC_SOCKET_URL": "wss://otlob-api-production.up.railway.app/realtime"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://otlob-production-d0da.up.railway.app/api",
-        "EXPO_PUBLIC_SOCKET_URL": "wss://otlob-production-d0da.up.railway.app/realtime"
+        "EXPO_PUBLIC_API_URL": "https://otlob-api-production.up.railway.app/api",
+        "EXPO_PUBLIC_SOCKET_URL": "wss://otlob-api-production.up.railway.app/realtime"
       }
     }
   },

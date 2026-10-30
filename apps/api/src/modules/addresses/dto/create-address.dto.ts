@@ -1,22 +1,25 @@
-import { IsBoolean, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsBoolean, IsLatitude, IsLongitude, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
 export class CreateAddressDto {
   @IsUUID()
   districtId: string;
 
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(500)
   fullAddress: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   label?: string;
 
   @IsOptional()
-  @IsNumber()
+  @IsLatitude()
   lat?: number;
 
   @IsOptional()
-  @IsNumber()
+  @IsLongitude()
   lng?: number;
 
   @IsOptional()

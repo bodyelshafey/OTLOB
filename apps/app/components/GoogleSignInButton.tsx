@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { Platform } from "react-native";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import { useRouter } from "expo-router";
@@ -20,12 +21,42 @@ WebBrowser.maybeCompleteAuthSession();
 // Renders nothing if none are configured, so this is a safe no-op until
 // someone sets them up in Google Cloud Console + EAS build env.
 export function GoogleSignInButton() {
-  const router = useRouter();
-  const setAuth = useAuthStore((s) => s.setAuth);
-
+  // expo-auth-session's useAuthRequest THROWS during render when the client
+  // ID for the *current platform* is undefined (e.g. "Client Id property
+  // `androidClientId` must be defined to use Google auth on this platform"),
+  // which crashed every screen that mounts this button — before the "render
+  // nothing if unconfigured" check further down could ever run. Hooks can't
+  // be called conditionally, so the decision lives in this wrapper and the
+  // hook only runs inside <ConfiguredGoogleButton>, which mounts only when
+  // the current platform actually has a client ID.
   const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
   const androidClientId = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
   const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+
+  const configured =
+    Platform.OS === "android" ? !!androidClientId : Platform.OS === "ios" ? !!iosClientId : !!webClientId;
+  if (!configured) return null;
+
+  return (
+    <ConfiguredGoogleButton
+      iosClientId={iosClientId}
+      androidClientId={androidClientId}
+      webClientId={webClientId}
+    />
+  );
+}
+
+function ConfiguredGoogleButton({
+  iosClientId,
+  androidClientId,
+  webClientId,
+}: {
+  iosClientId?: string;
+  androidClientId?: string;
+  webClientId?: string;
+}) {
+  const router = useRouter();
+  const setAuth = useAuthStore((s) => s.setAuth);
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     iosClientId,
@@ -59,8 +90,6 @@ export function GoogleSignInButton() {
     // itself (not the whole response) avoids re-firing this effect.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [response?.type]);
-
-  if (!webClientId && !iosClientId && !androidClientId) return null;
 
   return (
     <Button

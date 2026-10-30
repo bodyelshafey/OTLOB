@@ -29,8 +29,7 @@ import {
 import { useAuthStore } from "@/store/authStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { i18n, isRTL } from "@/i18n";
-import { OfflineBanner } from "@/components/Feedback";
-import { useIsOnline } from "@/hooks/useIsOnline";
+import { ApiStatusBanner } from "@/components/ApiStatusBanner";
 import { useNotificationSocket } from "@/hooks/useNotificationSocket";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
@@ -110,7 +109,6 @@ function AuthGate() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const segments = useSegments();
   const router = useRouter();
-  const online = useIsOnline();
   useNotificationSocket();
   usePushNotifications();
 
@@ -128,7 +126,7 @@ function AuthGate() {
   return (
     <View style={{ flex: 1 }}>
       {!inAuthGroup && <Header />}
-      <OfflineBanner visible={!online} />
+      <ApiStatusBanner />
       <Slot />
     </View>
   );

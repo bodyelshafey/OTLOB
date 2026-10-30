@@ -90,6 +90,16 @@ method. Never put an actual key/password/connection string here.)*
 - **Supabase project**: `bodyelshafey's Project`, ref `alfokhlyoitokzkahgce`, region `eu-west-1`, Postgres 17. Used for the DB (via Prisma) and the 4 storage buckets described above.
 - **Vercel project**: `otlob`, linked to GitHub `bodyelshafey/OTLOB`, framework auto-detected as Next.js, Node 24.x. Hosts `apps/web`. As of the last check, the latest production deployment was **canceled** and the project was not serving live traffic — check current status before assuming the web app is up.
 - **API hosting**: designed for Railway (or any Node/Docker host) — see `apps/api/Dockerfile`. `apps/web/.env.local.example` points `NEXT_PUBLIC_API_URL` at a Railway URL by default; `apps/app/eas.json`'s `env` block does the same for EAS builds.
+  - **Known failure mode (2026-10-24): mobile login shows `Application not found`.** That exact text is *not* produced by this
+    API (every API error is `{ success:false, statusCode, message }` via `HttpExceptionFilter`, §8.12) — it is Railway's edge
+    answering `{"status":"error","code":404,"message":"Application not found"}` for a domain that isn't attached to a running
+    service. Web (`NEXT_PUBLIC_API_URL` on Vercel) and mobile (`eas.json`, `.env.local`) all point at the same Railway domain, so
+    this is a Railway-side problem (service stopped/deleted/redeploy failed, or the public domain was removed/regenerated), not a
+    client bug. It could **not** be verified from the repo/sandbox (no Railway access) — check the service + its public domain in
+    the Railway dashboard; if the domain changed, update `NEXT_PUBLIC_API_URL` (Vercel), `apps/app/eas.json`, and
+    `apps/app/app.json` `extra`. The mobile app now classifies this case (`apps/app/lib/apiError.ts`) instead of showing the raw text.
+  - **Railway healthcheck:** set the service's Healthcheck Path to `/api/health/live` (dashboard setting — no `railway.json` in the repo).
+  - **Dual environment (local + Railway) and mobile failover:** see [`docs/local-and-railway.md`](docs/local-and-railway.md) (added 2026-10-25).
 - **Mobile**: Expo/EAS — see `apps/app/eas.json` for build profiles; not auto-deployed, built on demand via `eas build`.
 
 ---
@@ -205,7 +215,19 @@ browsing).
 | jobs | (no controller) | BullMQ processors: `notifications.processor.ts`, `reports.processor.ts`, `delivery-automation.processor.ts` (Phase 8 — repeatable 2-hour auto-delivery scan, registered once at boot via `JobsService.onModuleInit`) | internal |
 | realtime | `/realtime` (Socket.IO namespace) | see below | JWT-authenticated socket connections |
 
+### Health endpoints (`apps/api/src/health.controller.ts` + `health.service.ts`, unauthenticated, exempt from the rate limiter)
+
+- `GET /api/health/live` — liveness: process is up, touches nothing external (Railway healthcheck target).
+- `GET /api/health/ready` — readiness: `200 {status:"ok", service:"otlob-api", runtime, checks:{database}}` or `503 {status:"unavailable"…}`.
+  The DB check is a bounded `SELECT 1` (2 s timeout) cached 5 s (2 s when failing) and shared by concurrent callers. This is what the mobile app probes.
+- `GET /api/health` — legacy contract kept unchanged (always 200, `status: ok|degraded`, `database`).
+- No endpoint exposes connection strings or credentials (asserted in `src/health.spec.ts`).
+
 ### Realtime (Socket.IO, `/realtime` namespace)
+
+**Per-instance state:** rooms live in each API process's memory (no `@socket.io/redis-adapter`). Two API instances (e.g. Railway + a
+local dev API) do not share rooms or events — see `docs/local-and-railway.md`.
+
 
 Client → server events: `order:subscribe`, `order:unsubscribe`, `store:subscribe`,
 `driver:location`.
@@ -235,13 +257,13 @@ Server → client events: `order:status` (to `order:<id>`, `user:<id>`, and `sto
   with an explicit `connectionTimeoutMillis` (`DATABASE_CONNECT_TIMEOUT_MS`, default 15000) — but
   since the DB is not optional the way Redis is, that one fails fast (`process.exit(1)` with a clear
   error) rather than retrying in the background. `main.ts` also now binds `0.0.0.0` in production /
-  `127.0.0.1` in development (was hardcoded to no explicit host) — unrelated to the actual hang
+  `127.0.0.1` in development unless the `HOST` env var overrides it (was hardcoded to no explicit host) — unrelated to the actual hang
   (both explicit `0.0.0.0` and no host were already tried and both hung, since the real block was
   upstream of the `.listen()` call entirely), kept as the requested general hardening.
 
 ### Rate limiting
 
-Global default 120 req/min via `@nestjs/throttler`. Auth overrides (updated 2026-09-13 for the
+Global default 120 req/min (health endpoints are exempt via `@SkipThrottle()`) via `@nestjs/throttler`. Auth overrides (updated 2026-09-13 for the
 phone-first pivot — see §8): `/auth/register` 5/min, `/auth/login` 8/min,
 `/auth/google` 15/min, `/auth/refresh` 20/min, `/auth/verify-phone` 10/min,
 `/auth/resend-phone-code` 5/min, `/auth/email/add` 5/min,
@@ -253,6 +275,11 @@ limit once the API is horizontally scaled to multiple instances (each instance e
 counter). Flagged as a known gap, not yet fixed — see §13.
 
 ### Tests
+
+**Added 2026-10-25:** `apps/api/src/health.spec.ts` (13 tests: bounded/cached DB check, 200/503 semantics, no secret leakage, throttler exemption proven
+against a live `ThrottlerGuard`) and the mobile suite `apps/app/__tests__/*.test.js` (`npm run test:app`, plain `node --test`, 93 tests: endpoint
+manager scenarios on a fake clock, config resolution, failure classification, health probe, the real `lib/api.ts` against scripted servers incl. token refresh
+and never-replay-POST, the real `lib/socket.ts` against two real Socket.IO servers, and static release-config checks).
 
 `apps/api/src/modules/auth/auth.service.spec.ts` (**rewritten again 2026-09-13** for the
 phone-first pivot — the 2026-09-12 version tested "both email AND phone mandatory" and no longer
@@ -403,6 +430,11 @@ to have the same real phone number stored in different raw formats (`01143677691
 because the raw strings differ. Needs a human decision (merge/contact/ignore), not a silent
 migration fix — see the `schema.prisma` comment on `User.phone`.
 
+**Mobile login error handling (2026-10-24):** `apps/app/lib/apiError.ts#getApiErrorMessage` renders API errors as before, but
+a 404/502/503/504 that does *not* have the API error shape (`statusCode` missing → came from a proxy/host, not from Nest) shows
+`common.serviceUnavailable`, and a no-response failure shows `common.networkError` (both in `en.json`/`ar.json`). In `__DEV__`
+both messages include the API URL being called. Currently wired into the login screen only.
+
 ### 8.4 The optional "Add your email" step
 
 `POST /auth/email/add` `{ email }` (**JWT-protected**) — reachable any time after registration:
@@ -528,6 +560,25 @@ inline rather than through the shared helper (predates it slightly, same shape).
 pattern to new duplicate/permission errors rather than throwing bare `ConflictException`/
 `ForbiddenException` with just a message string.
 
+**Error body contract (global filter, `apps/api/src/common/filters/`)** — flattened 2026-10-20.
+Every error is `{ success: false, statusCode, path, timestamp, message, code?, ...extras }` where
+`message` is **always a string (or `string[]` for validation errors), never an object**, and `code`
+plus any extra fields a coded exception carries (e.g. `phone` on `PHONE_VERIFICATION_REQUIRED`) are
+**top-level**. Before this change the whole Nest response was nested under `message`, so clients that
+read `body.code`/`body.phone` never found them and mobile rendered the `message` object as a React
+child (crash on duplicate-phone registration). Prisma errors are mapped deliberately by
+`prisma-error.mapper.ts`: `P2002`→409 (`PHONE_/EMAIL_/USERNAME_ALREADY_EXISTS` or `ALREADY_EXISTS`),
+`P2025`→404, `P2003`→409, `P2000/P2011/P2012…`→400, `P2024/P1001/P1002/P1008/P1017`/initialization
+→503 `SERVICE_UNAVAILABLE`, anything else→generic 500. Raw SQL/stack traces are only logged
+server-side. Address endpoints now validate `:id` with `ParseUUIDPipe` (400) and `PATCH` uses a real
+`UpdateAddressDto` (a `Partial<>` type is erased at runtime and previously skipped validation).
+Login now tries the E.164-normalized phone first, then the raw value (legacy rows).
+
+**Pending migration (not applied to production):** `20261010090000_order_address_on_delete_set_null`
+— the live `orders_address_id_fkey` is `NO ACTION`, so deleting an address used by any order fails;
+until applied, `DELETE /addresses/:id` returns 409 `ADDRESS_IN_USE`. Mobile `orders`/`addresses`
+screens now render an `ErrorState` with retry on failed requests instead of the empty state.
+
 ### 8.13 Sensitive-operations audit (what does and doesn't have step-up protection)
 
 - **Change email**: goes through `/auth/email/add` (§8.4) — no OTP, since email isn't a security
@@ -604,6 +655,12 @@ vars are actually on the critical path:
 | `GOOGLE_CLIENT_ID` / `NEXT_PUBLIC_GOOGLE_CLIENT_ID` / `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` | **USED** | Google Sign-In (§8.5) — independent of the OTP flow. |
 | `SKIP_EMAIL_DOMAIN_CHECK` | **USED, lower stakes than before** | Now only guards the optional "Add your email" step (§8.4), not registration itself. |
 
+`AUTO_DELIVER_SCAN_ENABLED` (optional; `false` stops this instance from scheduling the 2-hour order auto-delivery scan — set it on any
+non-production instance that shares the production database, e.g. a local API; unset = enabled).
+
+`HOST` (optional — interface to bind; unset = `0.0.0.0` in production, `127.0.0.1` otherwise. Set `HOST=0.0.0.0` in
+`apps/api/.env` to reach a local API from an Android emulator or a physical device; never needed on Railway.)
+
 ### `apps/web/.env.local` (copy from `.env.local.example`)
 `NEXT_PUBLIC_API_URL` (must be https in production, must include the `/api` prefix),
 `NEXT_PUBLIC_GOOGLE_MAPS_KEY`, `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (Google Sign-In — public by design,
@@ -612,8 +669,16 @@ loaded client-side by `GoogleSignInButton.tsx`; a *different* Google Cloud OAuth
 `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` (CI source-map upload only).
 
 ### `apps/app` (`.env.local` for local dev only; EAS builds use `eas.json`'s `env` block instead)
-`EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_SOCKET_URL` — for local dev, must point at your machine's LAN
-IP (not `localhost`) so a physical device/emulator can reach it. `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`
+`EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_SOCKET_URL` (primary = Railway), `EXPO_PUBLIC_LOCAL_API_URL`, `EXPO_PUBLIC_LOCAL_SOCKET_URL` (development-only
+fallback), `EXPO_PUBLIC_API_MODE` (`auto` | `primary` | `local`, development only). Resolved in **one place** — the pure function
+`apps/app/lib/apiConfig.ts` (wired by `lib/config.ts`); which endpoint is *currently active* is owned by `lib/apiEndpoint.ts`
+(`EndpointManager` in `lib/endpointManager.ts`), and both `lib/api.ts` (REST) and `lib/socket.ts` (realtime) read from it.
+Primary = env var → `app.json` `expo.extra`. Local (dev only) = env var → derived from the Metro host on port 4000 (Android emulator →
+`10.0.2.2`). **Release builds ignore every local setting and always use `primary`.** `eas.json` `preview`/`production` set the Railway URLs.
+All are public values inlined at Metro bundle time — restart with `npx expo start -c`, no native rebuild. Full table + device recipes:
+`docs/local-and-railway.md`.
+
+`EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`
 / `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` / `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` (Google Sign-In —
 Google issues one OAuth client ID per platform; `GoogleSignInButton.tsx` renders nothing until at
 least one is set; none of these three are interchangeable with `apps/api`'s or `apps/web`'s Google
@@ -642,6 +707,12 @@ npm run dev:api     # http://localhost:4000/api — Swagger at /api/docs
 npm run dev:web     # http://localhost:3000
 npm run dev:app     # or: cd apps/app && npx expo start
 ```
+
+**Local API + Railway together, with automatic mobile failover (dev only):** see `docs/local-and-railway.md`. Short version: put
+`HOST="0.0.0.0"`, a local `REDIS_URL` and `AUTO_DELIVER_SCAN_ENABLED="false"` in `apps/api/.env`, run `npm run dev:api` and `npm run dev:app`;
+`npm run dev:lan-ip` prints your LAN IP/firewall command. Use `EXPO_PUBLIC_API_MODE=primary` to pin Railway or `=local` to pin your machine.
+Check both APIs are the same app over the same data with `npm run env:fingerprint --workspace=@otlob/api` (run locally and on Railway, compare).
+Test commands: `npm run test:api` (jest), `npm run test:app` (`node --test`, incl. real Socket.IO servers).
 
 To reach the dashboards: register normally, then promote your user's `role` via `npx prisma
 studio` or direct SQL, log back in, open Profile → "لوحة التحكم".
@@ -695,6 +766,13 @@ studio` or direct SQL, log back in, open Profile → "لوحة التحكم".
 - Unit tests for auth + checkout logic.
 
 ## 13. What's intentionally NOT built yet (don't assume otherwise)
+
+- **Seamless realtime/jobs across two API instances** — no Redis Socket.IO adapter, BullMQ/Redis and rate-limit counters are per instance; mobile
+  failover moves the app between APIs but missed events aren't replayed (details: `docs/local-and-railway.md`).
+- **Idempotency keys for order/payment creation** — hence failed mutating requests are never auto-retried on another server.
+- **Web failover** — intentionally none (production site must never depend on a dev machine).
+- **Unverified (not testable from the sandbox that built it):** Railway's own `DATABASE_URL`/JWT secrets matching local ones (use
+  `env:fingerprint`), a full login against a live API, and the Railway Healthcheck Path setting.
 
 - **Mobile driver dashboard** — still a stub; needs feature parity with web's `/dashboard/driver`.
 - **Mobile admin dashboard** — partially built (221 lines vs. web's full admin section); needs the
@@ -778,6 +856,9 @@ studio` or direct SQL, log back in, open Profile → "لوحة التحكم".
 
 ## 14. Conventions to follow when adding code
 
+- Mobile networking: every REST call goes through `apps/app/lib/api.ts` and every realtime call through `lib/socket.ts`; never `fetch`/`axios` a
+  hardcoded URL, never read `EXPO_PUBLIC_*` URLs outside `lib/config.ts`. Mutating requests must never be replayed to another endpoint.
+- New public probe-style endpoints get `@Public()` **and** `@SkipThrottle()`; they must not expose configuration.
 - New backend feature → new module under `apps/api/src/modules/<name>/` (controller + service +
   DTOs), registered in `app.module.ts`, protected with `@Roles(...)` unless it's genuinely public.
 - Any schema change → new Prisma migration, never edit an already-applied one.

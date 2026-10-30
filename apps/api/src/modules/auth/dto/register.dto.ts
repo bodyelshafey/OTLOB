@@ -12,7 +12,7 @@ import { Transform } from 'class-transformer';
 // same reason: a raw E.164-only regex rejects every format a real user
 // actually types (local "01xxxxxxxxx", no country code, etc.), verified
 // by running class-validator directly against these exact payloads.
-function normalizeEgyptianPhone(value: unknown): unknown {
+export function normalizeEgyptianPhone(value: unknown): unknown {
   if (typeof value !== 'string') return value;
   const trimmed = value.trim();
   if (trimmed.startsWith('+')) return trimmed;

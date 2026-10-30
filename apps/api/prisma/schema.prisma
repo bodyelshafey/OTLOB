@@ -445,7 +445,7 @@ model Order {
   storeId        String        @map("store_id")
   driver         Driver?       @relation(fields: [driverId], references: [id])
   driverId       String?       @map("driver_id")
-  address        Address?      @relation(fields: [addressId], references: [id])
+  address        Address?      @relation(fields: [addressId], references: [id], onDelete: SetNull)
   addressId      String?       @map("address_id")
   customerName   String        @map("customer_name")
   phone          String

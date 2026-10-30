@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, fonts, radii, spacing, shadow } from "@/theme";
 import { useMyOrders } from "@/hooks/useOrders";
-import { StatusBadge, EmptyState, LoadingScreen } from "@/components/Feedback";
+import { StatusBadge, EmptyState, ErrorState, LoadingScreen } from "@/components/Feedback";
 import { PriceText } from "@/components/PriceText";
 import { t } from "@/i18n";
 
@@ -18,6 +18,8 @@ export default function OrdersScreen() {
 
       {orders.isLoading ? (
         <LoadingScreen />
+      ) : orders.isError && !orders.data ? (
+        <ErrorState onRetry={() => orders.refetch()} />
       ) : (orders.data?.length ?? 0) === 0 ? (
         <EmptyState icon="receipt-outline" message={t("order.noOrders")} />
       ) : (

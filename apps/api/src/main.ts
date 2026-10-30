@@ -91,7 +91,14 @@ async function bootstrap() {
   // file). Kept anyway per the requested production-grade startup: Railway
   // (and most PaaS) require binding 0.0.0.0 to be reachable, while
   // 127.0.0.1 is the safer default for local dev.
-  const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1';
+  //
+  // HOST overrides the default. Local mobile testing needs HOST=0.0.0.0:
+  // with the 127.0.0.1 default an Android emulator (via 10.0.2.2) or a
+  // physical device on the LAN can never reach the API, because 127.0.0.1 is
+  // only reachable from the machine itself.
+  const host =
+    process.env.HOST?.trim() ||
+    (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1');
 
   try {
     await app.listen(port, host);

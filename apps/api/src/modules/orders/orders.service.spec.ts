@@ -19,7 +19,7 @@ describe('OrdersService', () => {
       cartItem: { findMany: jest.fn(), deleteMany: jest.fn() },
       store: { findUnique: jest.fn() },
       storeMember: { findUnique: jest.fn() },
-      driver: { findUnique: jest.fn() },
+      driver: { findUnique: jest.fn(), update: jest.fn() },
       order: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
       $transaction: jest.fn((cb) => cb(prisma)),
     };
@@ -51,6 +51,9 @@ describe('OrdersService', () => {
       minimumOrder: 50,
       deliveryFee: 15,
       settings: { commissionPercentage: 10 },
+      // A store that never configured a weekly schedule: only the manual
+      // isOpen toggle gates checkout (see isStoreOpenNow).
+      workingHours: [],
     };
 
     it('rejects checkout when the cart has no items for this store', async () => {
@@ -276,6 +279,47 @@ describe('OrdersService', () => {
 
       const result = await service.updateStatus('order-1', 'COMPLETED', 'driver-user-1', 'DRIVER');
       expect(result.orderStatus).toBe('COMPLETED');
+    });
+  });
+
+  describe('findMyOrders', () => {
+    beforeEach(() => {
+      prisma.order.findMany = jest.fn();
+    });
+
+    it("only queries the caller's own orders, newest first", async () => {
+      prisma.order.findMany.mockResolvedValue([{ id: 'o1', userId: 'user-1' }]);
+
+      const result = await service.findMyOrders('user-1');
+
+      expect(result).toEqual([{ id: 'o1', userId: 'user-1' }]);
+      const args = prisma.order.findMany.mock.calls[0][0];
+      expect(args.where).toEqual({ userId: 'user-1' });
+      expect(args.orderBy).toEqual({ createdAt: 'desc' });
+    });
+
+    it('returns an empty array (not null/undefined) for a user with no orders', async () => {
+      prisma.order.findMany.mockResolvedValue([]);
+      await expect(service.findMyOrders('new-user')).resolves.toEqual([]);
+    });
+
+    it('lets a database failure propagate so the global filter can map it (no swallowing)', async () => {
+      prisma.order.findMany.mockRejectedValue(new Error('db down'));
+      await expect(service.findMyOrders('user-1')).rejects.toThrow('db down');
+    });
+  });
+
+  describe('findOne (order isolation)', () => {
+    it("refuses another customer's order with 403 and never returns its data", async () => {
+      prisma.order.findUnique.mockResolvedValue({ id: 'o1', userId: 'owner', storeId: 'store-1' });
+      prisma.store.findUnique.mockResolvedValue({ id: 'store-1', ownerId: 'store-owner' });
+
+      await expect(service.findOne('o1', 'intruder', 'USER')).rejects.toThrow('You cannot view this order');
+    });
+
+    it('lets the order owner read their own order', async () => {
+      prisma.order.findUnique.mockResolvedValue({ id: 'o1', userId: 'owner', storeId: 'store-1' });
+      await expect(service.findOne('o1', 'owner', 'USER')).resolves.toMatchObject({ id: 'o1' });
     });
   });
 });
